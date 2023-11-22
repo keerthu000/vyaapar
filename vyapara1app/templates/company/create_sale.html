@@ -1,0 +1,213 @@
+{% extends 'company/src/html/base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="container-fulid containerprof">
+
+    <div class="card radius-15" style="width: 100%;">
+      <div class="card-body">
+          <div class="card-title">
+            <h2 class="mb-0 text-uppercase text-right"> New Credit Note</h2>
+          </div>
+      </div>
+    </div>
+    <div>
+    <div class="card radius-15 p-5">
+      <form action="" class="mt-2 mb-4" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row">
+          <div class="col-md-3">
+            <label >Customer Name *</label>
+          </div>
+          <div class="col-md-6">
+            <select name="cx_name" id="customer_sel" class="form-control bg-light text-dark">
+              <option value="">select customer</option>
+              
+              {% for cust in c %}
+              <option value="{{cust.id}}" data-email="{{ cust.customerEmail }}" data-gst="{{ cust.GSTTreatment }}" data-gstin="{{cust.GSTIN}}" data-pos="{{cust.placeofsupply}}" data-billing_address="{{ cust.Address1 }} ,{{cust.state}}"
+              >{{cust.customerName}}</option>
+              {% endfor %}
+           
+            </select>
+            <a href="" data-toggle="modal" data-target="#newcustomer">+ Add New Customer</a>
+          </div>
+        </div>
+        <div class="row mt-2" id="email_row" style="display:none;">
+          <div class="col-md-3">
+            <label for="email">Email</label>
+          </div>
+          <div class="col-md-6">
+            <input type="text" class="form-control bg-light text-dark" id="email_input" name="email" disabled>
+          </div>
+        </div>
+        
+        <div class="row mt-2" id="pos_row" style="display:none;">
+          <div class="col-md-3">
+            <label for="pos">Place of Supply</label>
+          </div>
+          <div class="col-md-6">
+            <input type="text" class="form-control bg-light text-dark" id="pos_input" name="place_of_supply" disabled>
+          </div>
+        </div>
+        
+        <div class="row mt-2" id="gst_row" style="display:none;">
+          <div class="col-md-3">
+            <label for="gst">GST Treatment</label>
+          </div>
+          <div class="col-md-6">
+            <input type="text" class="form-control bg-light text-dark" id="gst_input" name="gst_treatment" disabled>
+          </div>
+        </div>
+  
+        <div class="row mt-2" id="gstin_row" style="display:none;">
+          <div class="col-md-3">
+            <label for="gst">GSTIN </label>
+          </div>
+          <div class="col-md-6">
+            <input type="text" class="form-control bg-light text-dark" id="gstin_input" name="gstin" disabled>
+          </div>
+        </div>
+        
+        <div class="row mt-2" id="billing_address_row" style="display:none;">
+          <div class="col-md-3">
+            <label for="billing_address">Billing Address</label>
+          </div>
+          <div class="col-md-6">
+            <input type="text" class="form-control bg-light text-dark" id="billing_address_input" name="billing_address" rows="2"   disabled>
+          </div>
+        </div>
+        
+        <div class="row mt-2">
+          <div class="col-md-3">
+            <label for="prof_name" >Invoice Number </label>
+          </div>
+  
+          <div class="col-md-6">
+            <input type="text" class="form-control bg-light text-dark"   id="prof_name" name="sale_no" value="IN-">
+          </div>
+        </div>
+  
+  
+        <div class="row mt-2">
+          <div class="col-md-3">
+              <label>Credit Note*</label>
+          </div>
+          <div class="col-md-6">
+              <input type="text" class="form-control bg-light text-dark" id="credit_note" name="credit_note" value="CRN-">
+          </div>
+      </div>
+      
+    
+        <div class="row mt-2">
+          <div class="col-md-3">
+            <label for="prof_name" >Reference</label>
+          </div>
+  
+          <div class="col-md-6">
+            <input type="text" class="form-control bg-light text-dark"   id="ref" name="ord_no" >
+          </div>
+        </div>
+  
+        <div class="row mt-2" >
+            <div class="col-md-3">
+              <label for="date1">Creditnote Date</label>
+            </div>
+            <div class="col-md-6">
+              <input type="date" class="form-control bg-light text-dark" id="date1" name="cr_date">
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-md-12 table-responsive-md mt-3">
+              <table class="table table-bordered " id="item_table" onclick='toggleDateInput()'>
+                <thead>
+                  <tr>
+                    <th>Item<br><a href="" data-toggle="modal" data-target="#newitem" class="text-capitalize">+ Item</a></th>
+                    <th class="text-right">HSN</th>
+                    <th class="text-right">Quantity</th>
+                    <th class="text-right">Rate</th>
+                    <th class="text-right">Tax</th>
+                    <th class="text-right">Discount</th>
+                    <th class="text-right">Amount</th>
+                    <th colspan="2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr id="row1">
+                      <td style="width: 10%;">
+                          <div ><select
+                                  class='form-control bg-light text-dark border-0 item_select itm'
+                                  name='item_name[]' id='item1' onchange="fetchItemData(this.value)">
+                                  <option value=" " selected disabled>Select Item</option>
+                                  {% for i in itm %}
+                                    <option value="{{i.Name}}">{{ i.Name  }} </option>
+                                  {% endfor %}
+                              </select></div>
+                      </td>
+                      
+                    
+                       
+                      <td style="width: 13%;" class='text-right'><input type='number' id='hsn1'
+                              class=' text-right form-control bg-light text-dark hsn' name='hsn[]'
+                              value='0'>
+                      </td>
+                      <td style="width: 15%;" class='text-right'><input type='number' id='qty1'
+                              class=' text-right form-control bg-light text-dark' name='quantity[]'
+                              value='0'>
+                      </td>
+                      <td style="width: 12%;" class='text-right text-dark'><input type='number' id='rate1'
+                              class=' text-right discount bg-light text-dark form-control rate' name='rate[]'
+                              value='0'>
+                      </td>
+                      <td style="width: 15%;" class='text-right '> <select name='tax[]' id='tax1'
+                        class='form-control bg-light text-dark  text-right border-0 tax' onclick="toggleDateInput()">
+                        <optgroup class="text-center" label="GST">
+                          <option value="0">0% GST(0%)</option>
+                          <option value="3">3.0% GST(3%)</option>
+                          <option value="5">5.0% GST(5%)</option>
+                          <option value="12">12.0% GST(12%)</option>
+                          <option value="18">18.0% GST(18%)</option>
+                          <option value="28">28.0% GST(28%)</option>
+                        </optgroup>
+                        <optgroup  class="text-center" label="IGST">
+                          <option value="0">0% IGST(0%)</option>
+                          <option value="3">3.0% IGST(3%)</option>
+                          <option value="5">5.0% IGST(5%)</option>
+                          <option value="12">12.0% IGST(12%)</option>
+                          <option value="18">18.0% IGST(18%)</option>
+                          <option value="28">28.0% IGST(28%)</option>             
+                          </optgroup>
+                    </select></td>
+                <td style="display: none;">
+                    <input type="text" name='taxamount' id="taxamount1"
+                        class=" taxamount text-dark" />
+                </td>
+                      <td style="width: 15%;" class='text-right'><input type='number' id='discount'
+                        class=' text-right form-control amount bg-light text-dark' name='discount[]'
+                        value='0.00'></td>
+                      <td style="width: 15%;" class='text-right'><input type='number' id='amount1'
+                              class=' text-right form-control amount bg-light text-dark' name='amount[]'
+                              value='0.00'></td>
+                      <td class='text-center'><button type='button' id='del_btn1'
+                              class='btn btn-transparent text-danger btn-sm btn-outline-danger rounded-circle delete-row'
+                              style='width:30px'>X</button></td>
+                              <td class='text-center'>
+                                <button type='button' class='btn btn-transparent text-primary btn-sm btn-outline-primary rounded-circle clone-row' data-row=1 style='width:30px' ><i class="fa fa-clone"></i>
+                                </button>
+                              </td>
+          </tr>
+          </tbody>
+          </table>
+          
+          
+          <script>
+
+
+
+
+
+
+
+
+
+
+{% endblock  %}
