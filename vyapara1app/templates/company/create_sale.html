@@ -11,6 +11,8 @@
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 
 <style>
 
@@ -36,7 +38,7 @@
     background-color:  #ffffff;
   }
   .modal{
-    z-index: 9999;
+    z-index: 99999;
     overflow: scroll;
   }
     input[type=text], select, textarea {
@@ -90,6 +92,9 @@
 
     }
     }
+    .modal.fade .modal-dialog {
+      transition: transform .3s ease-out;
+  }
     {% comment %} .bs {
       box-shadow: 2px 2px 10px 3px rgba(0, 0, 0, 0.397);
     }
@@ -129,7 +134,7 @@
     <div class="card radius-15" style="width: 100%;">
       <div class="card-body">
           <div class="card-title">
-              <h2 class="mb-0 text-uppercase text-dark text-left"  style="margin-left:250px;">New Credit Note</h2>
+              <h2 class="mb-0 text-uppercase text-dark text-left"  style="margin-left:250px;margin-top:20px;">New Credit Note</h2>
           </div>
       </div>
   </div>
@@ -145,7 +150,7 @@
               <div class="row">
                   <div class="col-md-4">
                       <!-- Input field on the left side -->
-                    <input type="text" id="tagsInput" class="js-example-tags form-control" placeholder="Search and select tags" multiple="multiple">
+                    <input type="text" id="tagsInput" class="js-example-tags form-control" placeholder="Parties" multiple="multiple">
                   </div>
                   <div class="col-md-4">
                     <!-- Input field on the left side -->
@@ -238,7 +243,7 @@
                   <thead>
                     <tr>
                       <th>Sl.No</th>
-                      <th>Item<br><a href="" data-toggle="modal" data-target="#newitem" class="text-capitalize">+Item</a></th>
+                      <th>Item<br><a href="#"  id="openModalBtn" data-toggle="modal" data-target="#newitem" class="text-capitalize">+Item</a></th>
                       <th class="text-right">HSN</th>
                       <th class="text-right">Quantity</th>
                       <th class="text-right">Rate</th>
@@ -308,7 +313,7 @@
                     </tr>
                   </tbody>
                 </table>
-                <button type="button" class="btn btn-sm text-white" style="background-color:skyblue;margin-left:250px;" id="add-row-button">Add another line</button>
+                <a href="#" type="button" class="btn btn-sm text-white" style="background-color:skyblue;margin-left:250px;" id="add-row-button">Add another line</a>
 
               </div>
 
@@ -423,7 +428,7 @@
       </div>
       <div class="modal-body" style="background: #f1f2f3;">
         <div class="card p-3 m-3">
-          <form action="{% url 'item_create_new' %}" method="post">
+          <form action="" method="post" id="addItemForm">
             {% csrf_token %}
                     <div class="position-relative">
                       <div class="position-absolute end-0">
@@ -579,9 +584,9 @@
                                       </div>
                                     </div>
                                     <div class="text-start mt-5">
-                                      <button id="prev_btn" class="btn btn-primary bg-gradient  me-3" type="button">PREVIOUS</button>
-                                      <button id="" class="btn btn-primary bg-gradient  me-3" type="submit" name="save_and_next" value="save_and_next">SAVE AND NEXT</button>
-                                      <button id="" class="btn btn-primary bg-gradient" type="submit"name="save" value="save">SAVE</button>
+                                      {% comment %} <button id="prev_btn" class="btn btn-primary bg-gradient  me-3" type="button">PREVIOUS</button> {% endcomment %}
+                                      <button id="" class="btn btn-primary bg-gradient  me-3" type="submit" name="save" value="save">SAVE</button>
+                                      <button id="" class="btn btn-primary bg-gradient" type="button" data-dismiss="modal">Close</button>
                                     </div>
                                 </div>
                                 <div  class="col-sm-12 col-md-1">
@@ -616,6 +621,7 @@
       <div class="modal-body" style="background: #f2f2f2;">
         <div class="card p-3 m-3">
           <form action="" method="post" class="needs-validation" novalidate autocomplete="off" id="modalUnit">
+            {% csrf_token %}
             <div class="row mt-2">
               <div class="col-md-3 mt-2"></div>
               <div class="col-md-1 mt-2">
@@ -652,6 +658,245 @@
   </div>  
 </div>
 
+<script>
+  $(document).ready(function () {
+    // Open modal when the button is clicked
+    $('#openModalBtn').on('click', function () {
+      // Reset the form when opening the modal
+      $('#addItemForm')[0].reset();
+      $('#newitem').modal('toggle'); // Use 'toggle' instead of 'show'
+    });
+
+    // Submit form using AJAX
+    $('#addItemForm').on('submit', function (e) {
+      e.preventDefault();
+
+      $.ajax({
+        type: 'POST',
+        url: "{% url 'new_creditnote_item' %}",
+        headers: { "X-CSRFToken": "{{ csrf_token }}" },
+        data: $(this).serialize(),
+        success: function (response) {
+          console.log('AJAX request successful');
+          if (response.status === 'success') {
+            alert(response.message);
+            
+            // Delay hiding the modal
+            setTimeout(function () {
+              $('#newitem').modal('hide');
+            }, 500); // Adjust the delay as needed
+            
+            // Reset the form when closing the modal
+            $('#addItemForm')[0].reset();
+            
+            // Update the dropdown dynamically with both item ID and item name/HSN
+            $('#item1').append($('<option>', {
+              value: response.item_id,
+              text: response.item_name + ' - ' + response.item_hsn,
+            }));
+          } else {
+            alert(response.message);
+          }
+        },
+        error: function (xhr, status, error) {
+          console.error('AJAX request failed:', error);
+        },
+      });
+    });
+  });
+</script>
+
+<script>
+  $(document).ready(function () {
+    var rowCount = 2; // Initialize rowCount to the next available number
+  
+    // Event handler for clone button
+    $('#item_table').on('click', '.clone-row', function () {
+      var row = $(this).closest('tr');
+     
+      var newRowId = 'row' + rowCount; // Generate a new ID for the cloned row
+      clonedRow.attr('id', newRowId); // Set the new ID for the cloned row
+  
+      // Clone the options for tax, account, and item (if needed)
+      // ...
+  
+      rowCount++; // Increment row counter
+      $('#add-row').click(function () {
+      rowCount++; // Increment row counter
+      console.log()
+      var newRow = `
+        <tr id='row${rowCount}'>
+          <td style="width: 10%;">
+            <div>
+              <select class='form-control bg-light text-dark  border-0 item_select itm' name='item[]' id='item${rowCount}'>
+                <option value=" " selected disabled>Select Item</option>
+                {% for i in itm %}
+                  <option value="{{i.Name}}">{{ i.Name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </td>
+          <td style="width: 13%;" class='text-right'><input type='number' id='hsn${rowCount}'
+                      class=' text-right form-control bg-light text-dark hsn' name='hsn[]'
+                      value='0'>
+              </td>
+  
+        
+  
+          
+          <td style="width: 13%;" class='text-right'>
+            <input type='number' id='qty${rowCount}' class='text-right bg-light text-dark qty form-control' name='quantity[]' value='0'>
+          </td>
+          
+          <td style="width: 15%;" class='text-right'>
+            <input type='number' id='rate${rowCount}' class='text-right bg-light text-dark rate form-control' name='rate[]' value='0'>
+          </td>
+          
+          <td style="width: 12%;" class='text-right'>
+            <input type='number' id='discount${rowCount}' class='text-right bg-light text-dark discount form-control' name='des[]' value='0'>
+          </td>
+          
+          <td style="width: 15%;" class='text-right'>
+            <select name='tax[]'  id='tax${rowCount}' class='form-control bg-light text-dark text-right border-0 tax' onclick=' toggleDateInput()'>
+              <optgroup class="text-center" label="GST">
+                              <option value="0" selected></option>
+                              <option value="0">0% GST(0%)</option>
+                              <option value="3">3.0% GST(3%)</option>
+                              <option value="5">5.0% GST(5%)</option>
+                              <option value="12">12.0% GST(12%)</option>
+                              <option value="18">18.0% GST(18%)</option>
+                              <option value="28">28.0% GST(28%)</option>
+                            </optgroup>
+                            <optgroup  class="text-center" label="IGST">
+                             
+                              <option value="0">0% IGST(0%)</option>
+                              <option value="3">3.0% IGST(3%)</option>
+                              <option value="5">5.0% IGST(5%)</option>
+                              <option value="12">12.0% IGST(12%)</option>
+                              <option value="18">18.0% IGST(18%)</option>
+                              <option value="28">28.0% IGST(28%)</option>             
+                              </optgroup>
+            </select>
+          </td>
+          
+          <td style="display: none;">
+            <input type="text" name='taxamount' id="taxamount${rowCount}" class="form-control bg-light text-dark taxamount" />
+          </td>
+          
+          <td style="width: 15%;" class='text-right'>
+            <input type='number' id='amount${rowCount}' class='text-right bg-light text-dark form-control amount' name='amount[]' value='0.00'>
+          </td>
+          
+          <td class='text-center'>
+            <button type='button' id='del_btn${rowCount}' class='btn btn-transparent text-danger btn-sm btn-outline-danger rounded-circle delete-row' style='width:30px'>X</button>
+          </td>
+          <td class='text-center'>
+          <button type='button' class='btn btn-transparent text-primary btn-sm btn-outline-primary rounded-circle clone-row' data-row='${rowCount}' style='width:30px'><i class="fa fa-clone"></i>
+  </button>
+        </td>
+        </tr>
+      `;
+    $('#item_table tbody').append(newRow);
+      toggleDateInput();
+      calculateSubtotal();
+      calculateGrandTotal();
+    });
+  
+      $('#item_table tbody').append(clonedRow);
+      calculateRowAmount(row);
+      calculateSubtotal();
+      calculateGrandTotal();
+      toggleDateInput();
+      calculateTaxAmount();
+      toggleDateInput();
+    });
+  
+    // Event handler for "Add another line" button
+    $('#add-row-button').click(function () {
+      var lastRow = $('#item_table tbody tr:last'); // Get the last row
+      var newRow = lastRow.clone(); // Clone the last row
+      var newRowId = 'row' + rowCount; // Generate a new ID for the cloned row
+      newRow.attr('id', newRowId); // Set the new ID for the cloned row
+  
+      // Clear input values in the cloned row if needed
+      newRow.find('input[type="number"]').val(0);
+  
+      $('#item_table tbody').append(newRow);
+      rowCount++; // Increment row counter
+    });
+  });
+  
+  
+  // Change event listener for the tax dropdown
+  $('#item_table').on('change', 'select[name^="tax"]', function () {
+      // Calculate CGST, SGST, or IGST based on the selected tax type
+      var selectedTaxType = $(this).val();
+      var subtotal = parseFloat($('#subtotal').val()) || 0;
+  
+      if (selectedTaxType === '0' || selectedTaxType === '3' || selectedTaxType === '5' || selectedTaxType === '12' || selectedTaxType === '18' || selectedTaxType === '28') {
+          // GST selected
+          var gstPercentage = parseFloat(selectedTaxType);
+          var cgst = (subtotal * (gstPercentage / 2)) / 100;
+          var sgst = cgst;
+  
+          $('#tr_cgst').show();
+          $('#tr_sgst').show();
+          $('#tr_igst').hide();
+  
+          $('#cgst').val(cgst.toFixed(2));
+          $('#sgst').val(sgst.toFixed(2));
+          $('#igst').val('0.00');
+      } else {
+          // IGST selected
+          $('#tr_cgst').hide();
+          $('#tr_sgst').hide();
+          $('#tr_igst').show();
+  
+          $('#cgst').val('0.00');
+          $('#sgst').val('0.00');
+          $('#igst').val(subtotal.toFixed(2));
+      }
+  
+      // Update tax total
+      calculateTaxTotal();
+  });
+  </script>
+  <script>
+      
+
+
+    $(document).ready(function () {
+      // Function to calculate and update the total for a row
+      function calculateRowTotal(row) {
+        var quantity = parseFloat(row.find('input[name="quantity[]"]').val());
+        var rate = parseFloat(row.find('input[name="rate[]"]').val());
+        var discount = parseFloat(row.find('input[name="discount[]"]').val());
+        
+        var total = quantity * rate;
+        if (!isNaN(discount)) {
+          total -= discount;
+        }
+        
+        row.find('input[name="amount[]"]').val(total.toFixed(2));
+      }
+      
+      // Add event listener for changes in quantity, rate, and discount fields
+      $('#item_table tbody').on('change', 'input[name="quantity[]"], input[name="rate[]"], input[name="discount[]"]', function () {
+        var row = $(this).closest('tr');
+        calculateRowTotal(row);
+      });
+      
+     
+        
+        // Clear the tax amount field in the cloned row
+        newRow.find('input[name="taxamount"]').val('');
+        
+        // Append the cloned row to the table
+        $('#item_table tbody').append(newRow);
+      });
+    </script>
+  
+ 
 
           
 <script>
@@ -802,7 +1047,55 @@
     })
     // set today end
 
-</script>       
+</script>    
+<script>
+  ////////////////////////////clone/////////////////////////////////////
+  $(document).ready(function () {
+    // Add event listener for the "Clone" button clicks
+    $('#item_table').on('click', '.clone-row', function () {
+      var rowToClone = $(this).closest('tr'); // Find the closest <tr> (row) to clone
+      var newRow = rowToClone.clone(); // Clone the row
+      
+      // Clear any unique identifiers or values in the cloned row
+      newRow.find('input[type="text"]').val('');
+      newRow.find('input[type="number"]').val('0');
+      
+      // Clone the item name field, including its selected option
+      var originalItemField = rowToClone.find('select[name="item_name[]"]');
+      var clonedItemField = newRow.find('select[name="item_name[]"]');
+      clonedItemField.val(originalItemField.val());
+      
+      // Clone the HSN, quantity, rate, discount, and amount fields
+      var originalHSNField = rowToClone.find('input[name="hsn[]"]');
+      var clonedHSNField = newRow.find('input[name="hsn[]"]');
+      clonedHSNField.val(originalHSNField.val());
+      
+      var originalQtyField = rowToClone.find('input[name="quantity[]"]');
+      var clonedQtyField = newRow.find('input[name="quantity[]"]');
+      clonedQtyField.val(originalQtyField.val());
+      
+      var originalRateField = rowToClone.find('input[name="rate[]"]');
+      var clonedRateField = newRow.find('input[name="rate[]"]');
+      clonedRateField.val(originalRateField.val());
+      
+      var originalDiscountField = rowToClone.find('input[name="discount[]"]');
+      var clonedDiscountField = newRow.find('input[name="discount[]"]');
+      clonedDiscountField.val(originalDiscountField.val());
+      
+      var originalAmountField = rowToClone.find('input[name="amount[]"]');
+      var clonedAmountField = newRow.find('input[name="amount[]"]');
+      clonedAmountField.val(originalAmountField.val());
+      
+      // Clone the tax field, including its selected option
+      var originalTaxField = rowToClone.find('select[name="tax[]"]');
+      var clonedTaxField = newRow.find('select[name="tax[]"]');
+      clonedTaxField.val(originalTaxField.val());
+      
+      // Append the cloned row to the table
+      $('#item_table tbody').append(newRow);
+    });
+  });
+  </script>   
 
 
 
