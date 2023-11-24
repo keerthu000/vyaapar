@@ -129,300 +129,294 @@
 
 
 
-<div>
-  <div class="card radius-15 p-5">
-    <div class="card radius-15" style="width: 100%;">
-      <div class="card-body">
-          <div class="card-title">
-              <h2 class="mb-0 text-uppercase text-dark text-left"  style="margin-left:250px;margin-top:20px;">New Credit Note</h2>
-          </div>
-      </div>
-  </div>
+  <div>
+    <div class="card radius-15 p-5">
+      <div class="card radius-15" style="width: 100%;">
+        <div class="card-body">
+            <div class="card-title">
+                <h2 class="mb-0 text-uppercase text-dark text-left"  style="margin-left:250px;margin-top:20px;">New Credit Note</h2>
+            </div>
+        </div>
+    </div>
 
-    <div class="container-fluid containerprof" style="width: 150%;">
+      <div class="container-fluid containerprof" style="width: 150%;">
+        <div>
+          <form action="" class="mt-2 mb-4" method="post" enctype="multipart/form-data">
+              {% csrf_token %}
+              <div class="container">
+                <div class="row">
+                    <div class="col-md-4">
+                        <!-- Input field on the left side -->
+                      <input type="text" id="tagsInput" class="js-example-tags form-control" placeholder="Parties" multiple="multiple">
+                    </div>
+                    <div class="col-md-4">
+                      <!-- Input field on the left side -->
+                    <input type="text" id="tagsInput" class="js-example-tags form-control" placeholder="Phone" multiple="multiple">
+                  </div>
+                  
+                </div>
+              </div>
+              <div class="form-group mb-3  justify-content-end" style="margin-left:990px;margin-top:-20px;">
+                <label for="Return No">Return No.:</label>
+                <label for="Return No"></label>
+              </div>
+              <div class="form-group  justify-content-end" style="margin-left:990px;margin-top:-10px;">
+                <label for="Invoice No">Invoice No.:</label>
+                <label for="Invoice No"></label>
+              </div>
+              <div class="form-group  justify-content-end" style="margin-left:990px;margin-top:15px;">
+                <div class="row mt-1" >
+                  <div class="col-md-1">
+                    <label for="date1">invoice Date:</label>
+                  </div>
+                  <div class="col-md-3">
+                    <input type="date" class="form-control bg-light text-dark" id="date1" name="cr_date">
+                  </div>
+                </div>
+              </div>
+              <div class="form-group  justify-content-end" style="margin-left:990px;margin-top:12px;">
+                <div class="row mt-1" >
+                  <div class="col-md-1">
+                    <label for="date1">Date:</label>
+                  </div>
+                  <div class="col-md-3">
+                    <input type="date" class="form-control bg-light text-dark" id="date1" name="cr_date">
+                  </div>
+                </div>
+              </div>
+              <div class="form-group  justify-content-end" style="margin-left:990px;margin-top:12px;">
+                <div class="row mt-1" >
+                  <div class="col-md-3">
+                    <label for="source of supply">Source Of Supply:</label>
+                  </div>
+                  <div class="col-md-2">
+                    <select name="destination" id="v_destination" class="form-control bg-white text-dark"style="width:280px;margin-left:-150px;margin-top:12px;">
+                      <option value="[AN]-Andaman And Nicobar Islands" >[AN]-Andaman And Nicobar Islands</option>
+                      <option value="[AD]-Andhra Pradesh" >[AD]-Andhra Pradesh</option>
+                      <option value="[AR]-Arunachal Pradesh">[AR]-Arunachal Pradesh</option>
+                      <option value="[AS]-Assam" >[AS]-Assam</option>
+                      <option value="[BR]-Bihar" >[BR]-Bihar</option>
+                      <option value="[CH]-Chandhigarh" >[CH]-	Chandhigarh</option>
+                      <option value="[CG]-Chattisgarh" >[CG]-Chattisgarh</option>
+                      <option value="[DD]-Daman Diu" >[DD]-Daman Diu</option>
+                      <option value="[DL]-Delhi" >[DL]-	Delhi</option>
+                      <option value="[GA]-Goa" >[GA]-Goa</option>
+                      <option value="[GJ]-Gujarat" >[GJ]-Gujarat</option>
+                      <option value="[HR]-Haryana" >[HR]-Haryana</option>
+                      <option value="[HP]-Himachal Pradesh" >[HP]-Himachal Pradesh</option>
+                      <option value="[JK]-Jammu And Kashmir" >[JK]-Jammu And Kashmir</option>
+                      <option value="[JH]-Jharkand" >[JH]-Jharkand</option>
+                      <option value="[KA]-Karnataka" >[KA]-Karnataka</option>
+                      <option value="[KL]-Kerala" >[KL]-Kerala</option>
+                      <option value="[LA]-Ladakh" >[LA]-Ladakh</option>
+                      <option value="[LD]-Lakshadweep" >[LD]-Lakshadweep</option>
+                      <option value="[MP]-Madhyapradesh" >[MP]-Madhyapradesh</option>
+                      <option value="[MH]-Maharashtra" >[MH]-Maharashtra</option>
+                      <option value="[MN]-Manipur" >[MN]-Manipur</option>
+                      <option value="[ML]-Meghalaya" >[ML]-Meghalaya</option>
+                      <option value="[MZ]-Mizoram" >[MZ]-Mizoram</option>
+                      <option value="[NL]-Nagaland" >[NL]-Nagaland</option>
+                      <option value="[OD]-Odisha" >[OD]-Odisha</option>
+                      <option value="[PY]-Puducherry" >[PY]-Puducherry</option>
+                      <option value="[PB]-Punjab" >[PB]-Punjab</option>
+                      <option value="[RL]-Rajasthan" >[RL]-Rajasthan</option>
+                      <option value="[SK]-Sikkim" >[SK]-Sikkim</option>
+                      <option value="[TN]-Tamilnadu" >[TN]-Tamilnadu</option>
+                      <option value="[TS]-Telenghana" >[TS]-Telenghana</option>
+                      <option value="[TR]-Tripura" >[TR]-Tripura</option>
+                      <option value="[UP]-Uttar Pradesh" >[UP]-Uttar Pradesh</option>
+                      <option value="[UK]-Utharakhand" >[UK]-Utharakhand</option>
+                      <option value="[WB]-West Bengal" >[WB]-West Bengal</option>
+                      <option value="[OT]-Other Territory" >[OT]-Other Territory</option>
+                    
+                  </select>
+                  </div>
+                </div>
+              </div>
 
-  
-  
-      <div>
-        <form action="" class="mt-2 mb-4" method="post" enctype="multipart/form-data">
-            {% csrf_token %}
+              <div class="row mt-2">
+                <div class="col-md-12 table-responsive-md mt-3">
+                  <table class="table table-bordered " id="item_table" >
+                    <thead>
+                      <tr>
+                        <th>Sl.No</th>
+                        <th>Item<br><a href="#"  id="openModalBtn" data-toggle="modal" data-target="#newitem" class="text-capitalize">+Item</a></th>
+                        <th class="text-right">HSN</th>
+                        <th class="text-right">Quantity</th>
+                        <th class="text-right">Rate</th>
+                        <th class="text-right">Tax</th>
+                        <th class="text-right">Discount</th>
+                        <th class="text-right">Amount</th>
+                        <th colspan="2"></th>
+                      </tr>
+                    </thead>
+                    <tbody> 
+                      <tr id="row1">
+                        <td  class="text-right" style="width: 10%;color:000;">{{forloop.counter}}</td>
+                        <td style="width: 10%;">
+                          <div >
+                            <select class='form-control bg-light text-dark border-0 item_select itm' name='item_name[]' id='item1' onchange="fetchItemData(this.value)">
+                              <option value=" " selected disabled>Select Item</option>
+                                {% for i in item %}
+                              <option value="{{i.item_name}}">{{ i.item_name}} </option>
+                              {% endfor %}
+                            </select>
+                          </div>
+                        </td>
+                                  
+                                
+                                  
+                        <td style="width: 13%;" class='text-right'><input type='number' id='hsn1' class=' text-right form-control bg-light text-dark hsn' name='hsn[]' value='0'>
+                        </td>
+                        <td style="width: 15%;" class='text-right'><input type='number' id='qty1' class=' text-right form-control bg-light text-dark' name='quantity[]' value='0'>
+                        </td>
+                        <td style="width: 12%;" class='text-right text-dark'><input type='number' id='rate1' class=' text-right discount bg-light text-dark form-control rate' name='rate[]' value='0'>
+                        </td>
+                        {% for p  in parti %}
+                            <input  value="{{p.state}}"  class="stateValue" hidden>
+                        {% endfor %}
+                        <td style="width: 15%;" class='text-right'> 
+                          <select name='tax[]' id='tax1' class='form-control bg-light text-dark text-right border-0 tax' onchange="toggleDateInput()">
+                            <optgroup class="text-center" label="GST">
+                              <option value="0">0% GST(0%)</option>
+                              <option value="3">3.0% GST(3%)</option>
+                              <option value="5">5.0% GST(5%)</option>
+                              <option value="12">12.0% GST(12%)</option>
+                              <option value="18">18.0% GST(18%)</option>
+                              <option value="28">28.0% GST(28%)</option>
+                            </optgroup>
+                            <optgroup class="text-center" label="IGST">
+                              <option value="0">0% IGST(0%)</option>
+                              <option value="3">3.0% IGST(3%)</option>
+                              <option value="5">5.0% IGST(5%)</option>
+                              <option value="12">12.0% IGST(12%)</option>
+                              <option value="18">18.0% IGST(18%)</option>
+                              <option value="28">28.0% IGST(28%)</option>             
+                            </optgroup>
+                          </select>
+                        </td>
+                          <td style="display: none;">
+                            <input type="text" name='taxamount' id="taxamount1" class=" taxamount text-dark" />
+                          </td>
+                          <td style="width: 15%;" class='text-right'>
+                            <input type='number' id='discount' class=' text-right form-control amount bg-light text-dark' name='discount[]' value='0.00'>
+                          </td>
+                        <td style="width: 15%;" class='text-right'>
+                          <input type='number' id='amount1' class=' text-right form-control amount bg-light text-dark' name='amount[]' value='0.00'>
+                        </td>
+                        <td class='text-center'>
+                          <button type='button' id='del_btn1' class='btn btn-transparent text-danger btn-sm btn-outline-danger rounded-circle delete-row'  style='width:30px'>X</button>
+                        </td>
+                        <td class='text-center'>
+                          <button type='button' class='btn btn-transparent text-primary btn-sm btn-outline-primary rounded-circle clone-row' data-row=1 style='width:30px' ><i class="fa fa-clone"></i></button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <a href="#" type="button" class="btn btn-sm text-white" style="background-color:skyblue;margin-left:250px;" id="add-row-button">Add another line</a>
+
+                </div>
+
+              </div>
+              <div class="col-sm-6 mt-4" >
+                <table class=" table  text-dark" style="background-color: #f2f2f2;margin-left:850px;">
+                    <tr id="subtotal-row">
+                        <td>Sub Total</td>
+                        <td></td>
+                        <td><input type="number" id="subtotal" name="subtotal" step="any" value="0.00"
+                                class="bg-transparent border-0 text-right subtotal text-dark"></td>
+                    </tr>
+                    <tr style="display: none;" id="tr_igst">
+                        <td>IGST</td>
+                        <td></td>
+                        <td><input type="number" id='igst' name="igst" step="any" value="0.00"
+                                class="form-control bg-transparent border-0 text-right igst  text-dark" ></td>
+                    </tr>
+                    <tr style="display: none;" id="tr_cgst">
+                        <td>CGST</td>
+                        <td></td>
+                        <td><input type="number" id='cgst' name="cgst" step="any" value="0.00"
+                                class="form-control bg-transparent border-0 text-right cgst text-dark" ></td>
+                    </tr>
+                    <tr style="display: none;" id="tr_sgst">
+                        <td>SGST</td>
+                        <td></td>
+                        <td><input type="number" id='sgst' name="sgst" step="any" value="0.00"
+                                class="form-control bg-transparent border-0 text-right sgst  text-dark" ></td>
+                    </tr>
+                    
+                    <tr>
+                      <td>Tax Total</td>
+                      <td></td>
+                      <td><input type="number" id="tax_total" name="tax_total" step="any" value="0.00" 
+                                class="form-control bg-transparent border-0 text-right tax_total text-dark"></td>
+                    </tr>
+                    <tr>
+                        <td>Shipping Charges</td>
+                        
+                        <td><input type="hidden" id="shipping_charge"  step="any" value="0.00" 
+                            class="form-control bg-transparent border-0 text-right shipping_charge  "></td>
+                            <td><input type="number" class="form-control  bg-transparent border-0  text-darkt" id="shipping" value="0" name="shipping_charge"> </td>
+                    </tr>
+                    <tr>
+                      <td>Adjustment</td>
+                      <td></td>
+                      <td><input type="number" id="adjustment" name="adjustment" step="any" 
+                          class="form-control bg-transparent border-0 text-right adjustment" value="0.00"></td>
+                    </tr>
+                    
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td> </td>
+                    </tr>
+                    <tr>
+                        <th>Total ( &#x20B9; )</th>
+                        <th></th>
+                        <th><input type="number" id="grandtotal" name="t_total" step="any" value="0.00" 
+                                class="form-control bg-transparent border-0 text-right grandtotal  text-white"></th>
+                    </tr>
+                </table>
+            </div>
+        
             <div class="container">
               <div class="row">
                   <div class="col-md-4">
-                      <!-- Input field on the left side -->
-                    <input type="text" id="tagsInput" class="js-example-tags form-control" placeholder="Parties" multiple="multiple">
+                    <select class="form-control">
+                        <option>Cash</option>
+                        <option>UPI</option>
+                        <option>Cheque</option>
+                      <select>
                   </div>
-                  <div class="col-md-4">
-                    <!-- Input field on the left side -->
-                  <input type="text" id="tagsInput" class="js-example-tags form-control" placeholder="Phone" multiple="multiple">
-                </div>
-                
               </div>
             </div>
-            <div class="form-group mb-3  justify-content-end" style="margin-left:990px;margin-top:-20px;">
-              <label for="Return No">Return No.:</label>
-              <label for="Return No"></label>
-            </div>
-            <div class="form-group  justify-content-end" style="margin-left:990px;margin-top:-10px;">
-              <label for="Invoice No">Invoice No.:</label>
-              <label for="Invoice No"></label>
-            </div>
-            <div class="form-group  justify-content-end" style="margin-left:990px;margin-top:15px;">
-              <div class="row mt-1" >
-                <div class="col-md-1">
-                  <label for="date1">invoice Date:</label>
-                </div>
-                <div class="col-md-3">
-                  <input type="date" class="form-control bg-light text-dark" id="date1" name="cr_date">
+            <div class="row py-5 border-bottom" style="margin-left:250px;">
+                <div class="col-md-8 d-flex flex-column w-60 text-dark">
+                    <label for="">Description</label>
+                    <textarea name="ter_cond" id="" cols="10" rows="3" class="form-control"
+                        placeholder="Add any Description" style="width:50%;"></textarea>
                 </div>
               </div>
+            <div class="row mt-5 mb-3 m-5 ">
+              <input style="width: 150px; margin-left: 11rem;" type="submit" class="btn btn-info mt-2" value="Save">
+              <input style="width: 150px; margin-left: 1.8rem;" class="btn btn-secondary mt-2" type="reset" value="Save and New">
             </div>
-            <div class="form-group  justify-content-end" style="margin-left:990px;margin-top:12px;">
-              <div class="row mt-1" >
-                <div class="col-md-1">
-                  <label for="date1">Date:</label>
-                </div>
-                <div class="col-md-3">
-                  <input type="date" class="form-control bg-light text-dark" id="date1" name="cr_date">
-                </div>
-              </div>
-            </div>
-            <div class="form-group  justify-content-end" style="margin-left:990px;margin-top:12px;">
-              <div class="row mt-1" >
-                <div class="col-md-3">
-                  <label for="source of supply">Source Of Supply:</label>
-                </div>
-                <div class="col-md-2">
-                  <select name="destination" id="v_destination" class="form-control bg-white text-dark"style="width:280px;margin-left:-150px;margin-top:12px;">
-                    <option value="[AN]-Andaman And Nicobar Islands" >[AN]-Andaman And Nicobar Islands</option>
-                    <option value="[AD]-Andhra Pradesh" >[AD]-Andhra Pradesh</option>
-                    <option value="[AR]-Arunachal Pradesh">[AR]-Arunachal Pradesh</option>
-                    <option value="[AS]-Assam" >[AS]-Assam</option>
-                    <option value="[BR]-Bihar" >[BR]-Bihar</option>
-                    <option value="[CH]-Chandhigarh" >[CH]-	Chandhigarh</option>
-                    <option value="[CG]-Chattisgarh" >[CG]-Chattisgarh</option>
-                    <option value="[DD]-Daman Diu" >[DD]-Daman Diu</option>
-                    <option value="[DL]-Delhi" >[DL]-	Delhi</option>
-                    <option value="[GA]-Goa" >[GA]-Goa</option>
-                    <option value="[GJ]-Gujarat" >[GJ]-Gujarat</option>
-                    <option value="[HR]-Haryana" >[HR]-Haryana</option>
-                    <option value="[HP]-Himachal Pradesh" >[HP]-Himachal Pradesh</option>
-                    <option value="[JK]-Jammu And Kashmir" >[JK]-Jammu And Kashmir</option>
-                    <option value="[JH]-Jharkand" >[JH]-Jharkand</option>
-                    <option value="[KA]-Karnataka" >[KA]-Karnataka</option>
-                    <option value="[KL]-Kerala" >[KL]-Kerala</option>
-                    <option value="[LA]-Ladakh" >[LA]-Ladakh</option>
-                    <option value="[LD]-Lakshadweep" >[LD]-Lakshadweep</option>
-                    <option value="[MP]-Madhyapradesh" >[MP]-Madhyapradesh</option>
-                    <option value="[MH]-Maharashtra" >[MH]-Maharashtra</option>
-                    <option value="[MN]-Manipur" >[MN]-Manipur</option>
-                    <option value="[ML]-Meghalaya" >[ML]-Meghalaya</option>
-                    <option value="[MZ]-Mizoram" >[MZ]-Mizoram</option>
-                    <option value="[NL]-Nagaland" >[NL]-Nagaland</option>
-                    <option value="[OD]-Odisha" >[OD]-Odisha</option>
-                    <option value="[PY]-Puducherry" >[PY]-Puducherry</option>
-                    <option value="[PB]-Punjab" >[PB]-Punjab</option>
-                    <option value="[RL]-Rajasthan" >[RL]-Rajasthan</option>
-                    <option value="[SK]-Sikkim" >[SK]-Sikkim</option>
-                    <option value="[TN]-Tamilnadu" >[TN]-Tamilnadu</option>
-                    <option value="[TS]-Telenghana" >[TS]-Telenghana</option>
-                    <option value="[TR]-Tripura" >[TR]-Tripura</option>
-                    <option value="[UP]-Uttar Pradesh" >[UP]-Uttar Pradesh</option>
-                    <option value="[UK]-Utharakhand" >[UK]-Utharakhand</option>
-                    <option value="[WB]-West Bengal" >[WB]-West Bengal</option>
-                    <option value="[OT]-Other Territory" >[OT]-Other Territory</option>
-                   
-                </select>
-                </div>
-              </div>
-            </div>
-
-            <div class="row mt-2">
-              <div class="col-md-12 table-responsive-md mt-3">
-                <table class="table table-bordered " id="item_table" onclick='toggleDateInput()'>
-                  <thead>
-                    <tr>
-                      <th>Sl.No</th>
-                      <th>Item<br><a href="#"  id="openModalBtn" data-toggle="modal" data-target="#newitem" class="text-capitalize">+Item</a></th>
-                      <th class="text-right">HSN</th>
-                      <th class="text-right">Quantity</th>
-                      <th class="text-right">Rate</th>
-                      <th class="text-right">Tax</th>
-                      <th class="text-right">Discount</th>
-                      <th class="text-right">Amount</th>
-                      <th colspan="2"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr id="row1">
-                      <td  class="text-right" style="width: 10%;color:000;">{{forloop.counter}}</td>
-                      <td style="width: 10%;">
-                        <div >
-                          <select class='form-control bg-light text-dark border-0 item_select itm' name='item_name[]' id='item1' onchange="fetchItemData(this.value)">
-                            <option value=" " selected disabled>Select Item</option>
-                              {% for i in itm %}
-                            <option value="{{i.Name}}">{{ i.Name  }} </option>
-                            {% endfor %}
-                          </select>
-                        </div>
-                      </td>
-                                
-                              
-                                
-                      <td style="width: 13%;" class='text-right'><input type='number' id='hsn1' class=' text-right form-control bg-light text-dark hsn' name='hsn[]' value='0'>
-                      </td>
-                      <td style="width: 15%;" class='text-right'><input type='number' id='qty1' class=' text-right form-control bg-light text-dark' name='quantity[]' value='0'>
-                      </td>
-                      <td style="width: 12%;" class='text-right text-dark'><input type='number' id='rate1' class=' text-right discount bg-light text-dark form-control rate' name='rate[]' value='0'>
-                      </td>
-                      <td style="width: 15%;" class='text-right '> 
-                        <select name='tax[]' id='tax1'  class='form-control bg-light text-dark  text-right border-0 tax' onclick="toggleDateInput()">
-                          <optgroup class="text-center" label="GST">
-                            <option value="0">0% GST(0%)</option>
-                            <option value="3">3.0% GST(3%)</option>
-                            <option value="5">5.0% GST(5%)</option>
-                            <option value="12">12.0% GST(12%)</option>
-                            <option value="18">18.0% GST(18%)</option>
-                            <option value="28">28.0% GST(28%)</option>
-                          </optgroup>
-                          <optgroup  class="text-center" label="IGST">
-                            <option value="0">0% IGST(0%)</option>
-                            <option value="3">3.0% IGST(3%)</option>
-                            <option value="5">5.0% IGST(5%)</option>
-                            <option value="12">12.0% IGST(12%)</option>
-                            <option value="18">18.0% IGST(18%)</option>
-                            <option value="28">28.0% IGST(28%)</option>             
-                          </optgroup>
-                        </select>
-                      </td>
-                        <td style="display: none;">
-                          <input type="text" name='taxamount' id="taxamount1" class=" taxamount text-dark" />
-                        </td>
-                        <td style="width: 15%;" class='text-right'>
-                          <input type='number' id='discount' class=' text-right form-control amount bg-light text-dark' name='discount[]' value='0.00'>
-                        </td>
-                      <td style="width: 15%;" class='text-right'>
-                        <input type='number' id='amount1' class=' text-right form-control amount bg-light text-dark' name='amount[]' value='0.00'>
-                      </td>
-                      <td class='text-center'>
-                        <button type='button' id='del_btn1' class='btn btn-transparent text-danger btn-sm btn-outline-danger rounded-circle delete-row'  style='width:30px'>X</button>
-                      </td>
-                      <td class='text-center'>
-                        <button type='button' class='btn btn-transparent text-primary btn-sm btn-outline-primary rounded-circle clone-row' data-row=1 style='width:30px' ><i class="fa fa-clone"></i></button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-                <a href="#" type="button" class="btn btn-sm text-white" style="background-color:skyblue;margin-left:250px;" id="add-row-button">Add another line</a>
-
-              </div>
-
-            </div>
-            <div class="col-sm-6 mt-4" >
-              <table class=" table  text-dark" style="background-color: #f2f2f2;margin-left:850px;">
-                  <tr id="subtotal-row">
-                      <td>Sub Total</td>
-                      <td></td>
-                      <td><input type="number" id="subtotal" name="subtotal" step="any" value="0.00"
-                              class="bg-transparent border-0 text-right subtotal text-dark"></td>
-                  </tr>
-                  <tr style="display: none;" id="tr_igst">
-                      <td>IGST</td>
-                      <td></td>
-                      <td><input type="number" id='igst' name="igst" step="any" value="0.00"
-                              class="form-control bg-transparent border-0 text-right igst  text-dark" ></td>
-                  </tr>
-                  <tr style="display: none;" id="tr_cgst">
-                      <td>CGST</td>
-                      <td></td>
-                      <td><input type="number" id='cgst' name="cgst" step="any" value="0.00"
-                              class="form-control bg-transparent border-0 text-right cgst text-dark" ></td>
-                  </tr>
-                  <tr style="display: none;" id="tr_sgst">
-                      <td>SGST</td>
-                      <td></td>
-                      <td><input type="number" id='sgst' name="sgst" step="any" value="0.00"
-                              class="form-control bg-transparent border-0 text-right sgst  text-dark" ></td>
-                  </tr>
-                  
-                  <tr>
-                    <td>Tax Total</td>
-                    <td></td>
-                    <td><input type="number" id="tax_total" name="tax_total" step="any" value="0.00" 
-                               class="form-control bg-transparent border-0 text-right tax_total text-dark"></td>
-                  </tr>
-                  <tr>
-                      <td>Shipping Charges</td>
-                      
-                      <td><input type="hidden" id="shipping_charge"  step="any" value="0.00" 
-                          class="form-control bg-transparent border-0 text-right shipping_charge  "></td>
-                          <td><input type="number" class="form-control  bg-transparent border-0  text-darkt" id="shipping" value="0" name="shipping_charge"> </td>
-                  </tr>
-                  <tr>
-                    <td>Adjustment</td>
-                    <td></td>
-                    <td><input type="number" id="adjustment" name="adjustment" step="any" 
-                        class="form-control bg-transparent border-0 text-right adjustment" value="0.00"></td>
-                  </tr>
-                  
-                  <tr>
-                      <td></td>
-                      <td></td>
-                      <td> </td>
-                  </tr>
-                  <tr>
-                      <th>Total ( &#x20B9; )</th>
-                      <th></th>
-                      <th><input type="number" id="grandtotal" name="t_total" step="any" value="0.00" 
-                              class="form-control bg-transparent border-0 text-right grandtotal  text-white"></th>
-                  </tr>
-              </table>
-          </div>
-      </div>
-      <div class="container">
-        <div class="row">
-            <div class="col-md-4">
-               <select class="form-control">
-                  <option>Cash</option>
-                  <option>UPI</option>
-                  <option>Cheque</option>
-                <select>
-            </div>
-        </div>
-       </div>
-       <div class="row py-5 border-bottom" style="margin-left:250px;">
-          <div class="col-md-8 d-flex flex-column w-60 text-dark">
-              <label for="">Description</label>
-              <textarea name="ter_cond" id="" cols="10" rows="3" class="form-control"
-                  placeholder="Add any Description" style="width:50%;"></textarea>
-          </div>
-      </div>
-      <div class="row mt-5 mb-3 m-5 ">
-       
-    
-     
-        <input style="width: 150px; margin-left: 11rem;" type="submit" class="btn btn-info mt-2" value="Save">
-        <input style="width: 150px; margin-left: 1.8rem;" class="btn btn-secondary mt-2" type="reset" value="Save and New">
-
-     
-        
-       
-      </div>
-    
+      
 
 
           </form>
         </div>
       </div>
-    </div>
-</div>
+  </div>
+ 
+
 
 <div class="modal fade" id="newitem" >
   <div class="modal-dialog modal-xl">
     <div class="modal-content" style="background: #f2f2f2;border-radius: 20px;">
       <div class="modal-header " style="background: #e4e6e7;">
           <h3 class="m-3 text-uppercase">New Item</h3>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
           </button>
       </div>
@@ -657,6 +651,47 @@
     </div>
   </div>  
 </div>
+<script>
+  function toggleDateInput(selectElement) {
+    // Get the selected row by traversing up the DOM from the select element
+    var selectedRow = $(selectElement).closest('tr');
+    
+    // Get the state value of the selected row
+    var stateValue = selectedRow.find('.stateValue').val();
+    
+    // Rest of your code to toggle GST and IGST options based on the state value
+    var gstOptions = selectedRow.find('.tax-gst option');
+    var igstOptions = selectedRow.find('.tax-igst option');
+
+    if (stateValue === 'kerala') {
+      gstOptions.show();
+      igstOptions.hide();
+    } else {
+      gstOptions.hide();
+      igstOptions.show();
+    }
+  }
+</script>
+
+{% comment %} <script>
+  function fetchItemData(selectedItem) {
+    // Make an AJAX request to fetch the HSN number for the selected item
+    $.ajax({
+      type: 'GET',
+      url: '{% url "get_hsn_for_item" %}',  // Replace with the actual URL for fetching HSN
+      data: { 'selectedItem': selectedItem },
+      success: function (data) {
+        // Update the HSN input field with the fetched value
+        $('#hsn1').val(data.hsn);
+        $('#rate1').val(data.rate);
+
+      },
+      error: function (xhr, status, error) {
+        console.error('AJAX request failed:', error);
+      },
+    });
+  }
+</script>  {% endcomment %}
 
 <script>
   $(document).ready(function () {
@@ -680,20 +715,26 @@
           console.log('AJAX request successful');
           if (response.status === 'success') {
             alert(response.message);
-            
-            // Delay hiding the modal
-            setTimeout(function () {
-              $('#newitem').modal('hide');
-            }, 500); // Adjust the delay as needed
-            
+
             // Reset the form when closing the modal
             $('#addItemForm')[0].reset();
-            
+
             // Update the dropdown dynamically with both item ID and item name/HSN
             $('#item1').append($('<option>', {
               value: response.item_id,
               text: response.item_name + ' - ' + response.item_hsn,
             }));
+
+            // Close the modal properly
+            $('#newitem').modal('hide');
+
+            // Clear any backdrop that might be causing the blurred effect
+            $('body').removeClass('modal-open');
+            $('.modal-backdrop').remove();
+
+            // Optionally, focus on the next input in the main form
+            // Replace 'nextInputID' with the actual ID of the next input
+            $('#nextInputID').focus();
           } else {
             alert(response.message);
           }
@@ -705,9 +746,107 @@
     });
   });
 </script>
-
 <script>
   $(document).ready(function () {
+    var rowCount = 2; // Initialize rowCount to the next available number
+  
+    // Function to update input IDs in a cloned row
+    function updateInputIds(clonedRow, newRowNumber) {
+      clonedRow.find('select, input').each(function () {
+        // Update the ID by replacing the number in the original ID with the new row number
+        var originalId = $(this).attr('id');
+        var updatedId = originalId.replace(/\d+/, newRowNumber);
+        $(this).attr('id', updatedId);
+      });
+    }
+  
+    // Function to fetch and populate HSN dynamically
+    function bindItemSelectEvent(row) {
+      row.find('.item_select').on('change', function () {
+        var selectedItem = $(this).val();
+        var hsnInput = $(this).closest('tr').find('.hsn');
+        var rateInput = $(this).closest('tr').find('.rate');
+  
+        // Make an AJAX request to fetch the HSN and rate for the selected item
+        $.ajax({
+          type: 'GET',
+          url: '{% url "get_hsn_for_item" %}', // Replace with the actual URL for fetching HSN
+          data: { 'selectedItem': selectedItem },
+          success: function (data) {
+            // Update the HSN and rate input fields with the fetched values
+            hsnInput.val(data.hsn);
+            rateInput.val(data.rate);
+          },
+          error: function (xhr, status, error) {
+            console.error('AJAX request failed:', error);
+          },
+        });
+      });
+    }
+  
+    // Event handler for clone button
+    $('#item_table').on('click', '.clone-row', function () {
+      var row = $(this).closest('tr');
+      var clonedRow = row.clone(); // Clone the entire row
+      var newRowId = 'row' + rowCount; // Generate a new ID for the cloned row
+      clonedRow.attr('id', newRowId); // Set the new ID for the cloned row
+  
+      // Clear input values in the cloned row if needed
+      clonedRow.find('input[type="number"]').val(0);
+  
+      // Update the IDs for the cloned row's input fields
+      updateInputIds(clonedRow, rowCount);
+  
+      // Unbind and rebind the item select event for the cloned row
+      clonedRow.find('.item_select').off('change');
+      bindItemSelectEvent(clonedRow);
+  
+      rowCount++; // Increment row counter
+      $('#item_table tbody').append(clonedRow);
+  
+      calculateSubtotal();
+      calculateGrandTotal();
+      toggleDateInput();
+      calculateTaxAmount();
+    });
+  
+    // Event handler for "Add another line" button
+    $('#add-row-button').click(function () {
+      var lastRow = $('#item_table tbody tr:last'); // Get the last row
+      var newRow = lastRow.clone(); // Clone the last row
+      var newRowId = 'row' + rowCount; // Generate a new ID for the cloned row
+      newRow.attr('id', newRowId); // Set the new ID for the cloned row
+  
+      // Clear input values in the cloned row if needed
+      newRow.find('input[type="number"]').val(0);
+  
+      // Update the IDs for the cloned row's input fields
+      updateInputIds(newRow, rowCount);
+  
+      // Unbind and rebind the item select event for the cloned row
+      newRow.find('.item_select').off('change');
+      bindItemSelectEvent(newRow);
+  
+      $('#item_table tbody').append(newRow);
+      rowCount++; // Increment row counter
+  
+      calculateSubtotal();
+      calculateGrandTotal();
+      toggleDateInput();
+      calculateTaxAmount();
+    });
+    
+    // Bind the item select event for the initial row
+    bindItemSelectEvent($('#item_table tbody tr:first'));
+  
+    // ... (Rest of your code)
+  });
+  
+</script>
+
+
+<script>
+  {% comment %} $(document).ready(function () {
     var rowCount = 2; // Initialize rowCount to the next available number
   
     // Event handler for clone button
@@ -731,7 +870,7 @@
               <select class='form-control bg-light text-dark  border-0 item_select itm' name='item[]' id='item${rowCount}'>
                 <option value=" " selected disabled>Select Item</option>
                 {% for i in itm %}
-                  <option value="{{i.Name}}">{{ i.Name }}</option>
+                  <option value="{{i.item_name}}">{{ i.item_name }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -825,7 +964,7 @@
       rowCount++; // Increment row counter
     });
   });
-  
+   {% endcomment %}
   
   // Change event listener for the tax dropdown
   $('#item_table').on('change', 'select[name^="tax"]', function () {
