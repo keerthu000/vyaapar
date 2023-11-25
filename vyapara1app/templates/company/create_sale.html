@@ -147,15 +147,34 @@
                 <div class="row">
                     <div class="col-md-4">
                         <!-- Input field on the left side -->
-                      <input type="text" id="tagsInput" class="js-example-tags form-control" placeholder="Parties" multiple="multiple">
+                      <select id="partySelect" name="partyname ">
+                        <option >Select a Party</option>
+                        {% for p in parti %}
+                        <option id="{{p.party_name}}">{{p.party_name}}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="col-md-1">
+                      <button style="height:45px;width:40px;"  class="add-party-btn  btn btn-outline-secondary">+<button>
                     </div>
                     <div class="col-md-4">
                       <!-- Input field on the left side -->
-                    <input type="text" id="tagsInput" class="js-example-tags form-control" placeholder="Phone" multiple="multiple">
+                      <input type="text" id="partyPhoneNumber" class="js-example-tags form-control" name="partyPhoneNumber" placeholder="Phone" multiple="multiple" value="">
+                    </div>
+                    <div class="form-group mb-3" style="margin-left: 10px; margin-top: -20px;">
+                     
+                      
+                      <label for="Balance">Balance:</label>
+                      <label for="Balance" id="balance"></label>
+                     
+                        
                   </div>
-                  
+                    
+                    
                 </div>
+
               </div>
+             
               <div class="form-group mb-3  justify-content-end" style="margin-left:990px;margin-top:-20px;">
                 <label for="Return No">Return No.:</label>
                 <label for="Return No"></label>
@@ -170,12 +189,12 @@
                     <label for="date1">invoice Date:</label>
                   </div>
                   <div class="col-md-3">
-                    <input type="date" class="form-control bg-light text-dark" id="date1" name="cr_date">
+                    <input type="date" class="form-control bg-light text-dark" id="inv_date" name="inv_date">
                   </div>
                 </div>
               </div>
-              <div class="form-group  justify-content-end" style="margin-left:990px;margin-top:12px;">
-                <div class="row mt-1" >
+              <div class="form-group justify-content-end" style="margin-left: 990px; margin-top: 12px;">
+                <div class="row mt-1">
                   <div class="col-md-1">
                     <label for="date1">Date:</label>
                   </div>
@@ -187,10 +206,15 @@
               <div class="form-group  justify-content-end" style="margin-left:990px;margin-top:12px;">
                 <div class="row mt-1" >
                   <div class="col-md-3">
-                    <label for="source of supply">Source Of Supply:</label>
+                    <label for="source of supply">State Of Supply:</label>
                   </div>
                   <div class="col-md-2">
-                    <select name="destination" id="v_destination" class="form-control bg-white text-dark"style="width:280px;margin-left:-150px;margin-top:12px;">
+                    <select name="destination" id="destination" class="form-control bg-white text-dark"style="width:280px;margin-left:-150px;margin-top:12px;">
+                      {% if is_same_state %}
+                      <option value="State">State</option>
+                      {% else %}
+                      <option value="Other State">Other State</option>
+                      {% endif %}
                       <option value="[AN]-Andaman And Nicobar Islands" >[AN]-Andaman And Nicobar Islands</option>
                       <option value="[AD]-Andhra Pradesh" >[AD]-Andhra Pradesh</option>
                       <option value="[AR]-Arunachal Pradesh">[AR]-Arunachal Pradesh</option>
@@ -272,11 +296,11 @@
                         </td>
                         <td style="width: 12%;" class='text-right text-dark'><input type='number' id='rate1' class=' text-right discount bg-light text-dark form-control rate' name='rate[]' value='0'>
                         </td>
-                        {% for p  in parti %}
-                            <input  value="{{p.state}}"  class="stateValue" hidden>
-                        {% endfor %}
+                        
+                        <input  value="{{parti.state}}"  id="stateValue" type="hidden">
+                       
                         <td style="width: 15%;" class='text-right'> 
-                          <select name='tax[]' id='tax1' class='form-control bg-light text-dark text-right border-0 tax' onchange="toggleDateInput()">
+                          <select name='tax[]' id='tax1' class='form-control bg-light text-dark text-right border-0 tax' onclick="toggleDateInput()">
                             <optgroup class="text-center" label="GST">
                               <option value="0">0% GST(0%)</option>
                               <option value="3">3.0% GST(3%)</option>
@@ -295,6 +319,7 @@
                             </optgroup>
                           </select>
                         </td>
+                        
                           <td style="display: none;">
                             <input type="text" name='taxamount' id="taxamount1" class=" taxamount text-dark" />
                           </td>
@@ -651,27 +676,74 @@
     </div>
   </div>  
 </div>
-<script>
-  function toggleDateInput(selectElement) {
-    // Get the selected row by traversing up the DOM from the select element
-    var selectedRow = $(selectElement).closest('tr');
-    
-    // Get the state value of the selected row
-    var stateValue = selectedRow.find('.stateValue').val();
-    
-    // Rest of your code to toggle GST and IGST options based on the state value
-    var gstOptions = selectedRow.find('.tax-gst option');
-    var igstOptions = selectedRow.find('.tax-igst option');
 
-    if (stateValue === 'kerala') {
-      gstOptions.show();
-      igstOptions.hide();
-    } else {
-      gstOptions.hide();
-      igstOptions.show();
-    }
-  }
+
+
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script type="text/javascript">
+  $(document).ready(function () {
+    // Get the current date in the format "YYYY-MM-DD"
+    var currentDate = new Date().toISOString().split('T')[0];
+
+    // Set the value of the date input field to the current date
+    $("#date1").val(currentDate);
+  });
 </script>
+
+
+
+
+<script type="text/javascript">
+  $(document).ready(function () {
+      $("#partySelect").change(function () {
+          var party_id = $(this).val();
+          if (party_id) {
+              // Make an AJAX request to get the party's contact number
+              $.get('{% url "get_party_number" %}', { partyname: party_id })
+                  .then(function (data) {
+                      $("#partyPhoneNumber").val(data.phone);
+                  })
+                  .catch(function (error) {
+                      console.log("Error fetching party details:", error);
+                  });
+          }
+      });
+  });
+
+  // Assuming you want to handle the button click as well
+  $(".add-party-btn").click(function () {
+      // Your button click logic here
+  });
+</script>
+<script type="text/javascript">
+  $(document).ready(function () {
+      $("#partySelect").change(function () {
+          var party_id = $(this).val();
+          if (party_id) {
+              // Make an AJAX request to get the party's contact number
+              $.get('{% url "get_party_balance" %}', { partyname: party_id })
+                  .then(function (data) {
+                    $("#balance").text(data.balance);
+                  })
+                  .catch(function (error) {
+                      console.log("Error fetching party details:", error);
+                  });
+          }
+      });
+  });
+
+  // Assuming you want to handle the button click as well
+  $(".add-party-btn").click(function () {
+      // Your button click logic here
+  });
+</script>
+
+
+
+
+
+
+
 
 {% comment %} <script>
   function fetchItemData(selectedItem) {
