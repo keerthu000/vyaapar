@@ -210,11 +210,14 @@
                   </div>
                   <div class="col-md-2">
                     <select name="destination" id="destination" class="form-control bg-white text-dark"style="width:280px;margin-left:-150px;margin-top:12px;">
-                      {% if is_same_state %}
-                      <option value="State">State</option>
+                      
+                    
+                      
+                       {% if is_same_state %}
+                      <option value="State">state</option>
                       {% else %}
                       <option value="Other State">Other State</option>
-                      {% endif %}
+                      {% endif %} 
                       <option value="[AN]-Andaman And Nicobar Islands" >[AN]-Andaman And Nicobar Islands</option>
                       <option value="[AD]-Andhra Pradesh" >[AD]-Andhra Pradesh</option>
                       <option value="[AR]-Arunachal Pradesh">[AR]-Arunachal Pradesh</option>
@@ -274,9 +277,9 @@
                         <th colspan="2"></th>
                       </tr>
                     </thead>
-                    <tbody> 
+                    <tbody id="items-table-body"> 
                       <tr id="row1">
-                        <td  class="text-right" style="width: 10%;color:000;">{{forloop.counter}}</td>
+                        <td  class="text-right" style="width: 10%;color:000;">1{{forloop.counter}}</td>
                         <td style="width: 10%;">
                           <div >
                             <select class='form-control bg-light text-dark border-0 item_select itm' name='item_name[]' id='item1' onchange="fetchItemData(this.value)">
@@ -333,12 +336,12 @@
                           <button type='button' id='del_btn1' class='btn btn-transparent text-danger btn-sm btn-outline-danger rounded-circle delete-row'  style='width:30px'>X</button>
                         </td>
                         <td class='text-center'>
-                          <button type='button' class='btn btn-transparent text-primary btn-sm btn-outline-primary rounded-circle clone-row' data-row=1 style='width:30px' ><i class="fa fa-clone"></i></button>
+                          <button type='button' class='btn btn-transparent text-primary btn-sm btn-outline-primary rounded-circle clone_row' data-row=1 style='width:30px' ><i class="fa fa-clone"></i></button>
                         </td>
                       </tr>
                     </tbody>
                   </table>
-                  <a href="#" type="button" class="btn btn-sm text-white" style="background-color:skyblue;margin-left:250px;" id="add-row-button">Add another line</a>
+                  <a href="#" type="button" class="btn btn-sm text-white" style="background-color:skyblue;margin-left:250px;" id="add">Add another line</a>
 
                 </div>
 
@@ -740,7 +743,71 @@
 
 
 
+<script>
+  $(document).ready(function () {
+    // Counter to keep track of the number of rows
+    var counter = 1;
 
+    // Function to add a new row to the table
+    function addRow() {
+      counter++;
+      var newRow = $("<tr id='row" + counter + "'>");
+      var cols = "";
+
+      // Generate the HTML for the new row with updated ids
+      cols += "<td class='text-right' style='width: 10%;color:000;'>" + counter + "</td>";
+      cols += "<td style='width: 10%;'><div><select class='form-control bg-light text-dark border-0 item_select itm' name='item_name[]' id='item" + counter + "' onchange='fetchItemData(this.value)'><option value='' selected disabled>Select Item</option>{% for i in item %}<option value='" + i.item_name + "'>" + i.item_name + "</option>{% endfor %}</select></div></td>";
+      cols += "<td style='width: 13%;' class='text-right'><input type='number' id='hsn" + counter + "' class='text-right form-control bg-light text-dark hsn' name='hsn[]' value='0'></td>";
+      cols += "<td style='width: 15%;' class='text-right'><input type='number' id='qty" + counter + "' class='text-right form-control bg-light text-dark' name='quantity[]' value='0'></td>";
+      cols += "<td style='width: 12%;' class='text-right text-dark'><input type='number' id='rate" + counter + "' class='text-right discount bg-light text-dark form-control rate' name='rate[]' value='0'></td>";
+      cols += "<input value='{{parti.state}}' id='stateValue" + counter + "' type='hidden'>";
+      cols += "<td style='width: 15%;' class='text-right'><select name='tax[]' id='tax" + counter + "' class='form-control bg-light text-dark text-right border-0 tax' onclick='toggleDateInput()'><optgroup class='text-center' label='GST'><option value='0'>0% GST(0%)</option><option value='3'>3.0% GST(3%)</option><option value='5'>5.0% GST(5%)</option><option value='12'>12.0% GST(12%)</option><option value='18'>18.0% GST(18%)</option><option value='28'>28.0% GST(28%)</option></optgroup><optgroup class='text-center' label='IGST'><option value='0'>0% IGST(0%)</option><option value='3'>3.0% IGST(3%)</option><option value='5'>5.0% IGST(5%)</option><option value='12'>12.0% IGST(12%)</option><option value='18'>18.0% IGST(18%)</option><option value='28'>28.0% IGST(28%)</option></optgroup></select></td>";
+      cols += "<td style='display: none;'><input type='text' name='taxamount" + counter + "' id='taxamount" + counter + "' class='taxamount text-dark' /></td>";
+      cols += "<td style='width: 15%;' class='text-right'><input type='number' id='discount" + counter + "' class='text-right form-control amount bg-light text-dark' name='discount[]' value='0.00'></td>";
+      cols += "<td style='width: 15%;' class='text-right'><input type='number' id='amount" + counter + "' class='text-right form-control amount bg-light text-dark' name='amount[]' value='0.00'></td>";
+      cols += "<td class='text-center'><button type='button' id='del_btn" + counter + "' class='btn btn-transparent text-danger btn-sm btn-outline-danger rounded-circle delete-row' style='width:30px'>X</button></td>";
+      cols += "<td class='text-center'><button type='button' class='btn btn-transparent text-primary btn-sm btn-outline-primary rounded-circle clone_row' data-row='" + counter + "' style='width:30px'><i class='fa fa-clone'></i></button></td>";
+
+      newRow.append(cols);
+      $("#items-table-body").append(newRow);
+    }
+
+    // Handle click event on the "Add another line" button
+    $("#add").click(function () {
+      addRow();
+    });
+
+    // You might need to adjust the following event handlers based on your actual requirements
+
+    // Delete row button click event
+    $(document).on("click", ".delete-row", function () {
+      var rowId = $(this).closest("tr").attr("id");
+      $("#" + rowId).remove();
+    });
+
+    // Clone row button click event
+    $(document).on("click", ".clone_row", function () {
+      var rowToClone = $(this).data("row");
+      var clonedRow = $("#" + rowToClone).clone();
+
+      // Update ids in the cloned row
+      clonedRow.attr("id", "row" + counter);
+      clonedRow.find("[id^='item']").attr("id", "item" + counter);
+      clonedRow.find("[id^='hsn']").attr("id", "hsn" + counter);
+      clonedRow.find("[id^='qty']").attr("id", "qty" + counter);
+      clonedRow.find("[id^='rate']").attr("id", "rate" + counter);
+      clonedRow.find("[id^='stateValue']").attr("id", "stateValue" + counter);
+      clonedRow.find("[id^='tax']").attr("id", "tax" + counter);
+      clonedRow.find("[id^='taxamount']").attr("id", "taxamount" + counter);
+      clonedRow.find("[id^='discount']").attr("id", "discount" + counter);
+      clonedRow.find("[id^='amount']").attr("id", "amount" + counter);
+
+      // Append the cloned row
+      $("#" + rowToClone).after(clonedRow);
+      counter++;
+    });
+  });
+</script>
 
 
 
@@ -818,7 +885,7 @@
     });
   });
 </script>
-<script>
+{% comment %} <script>
   $(document).ready(function () {
     var rowCount = 2; // Initialize rowCount to the next available number
   
@@ -914,164 +981,11 @@
     // ... (Rest of your code)
   });
   
-</script>
+</script> {% endcomment %}
 
 
-<script>
-  {% comment %} $(document).ready(function () {
-    var rowCount = 2; // Initialize rowCount to the next available number
-  
-    // Event handler for clone button
-    $('#item_table').on('click', '.clone-row', function () {
-      var row = $(this).closest('tr');
-     
-      var newRowId = 'row' + rowCount; // Generate a new ID for the cloned row
-      clonedRow.attr('id', newRowId); // Set the new ID for the cloned row
-  
-      // Clone the options for tax, account, and item (if needed)
-      // ...
-  
-      rowCount++; // Increment row counter
-      $('#add-row').click(function () {
-      rowCount++; // Increment row counter
-      console.log()
-      var newRow = `
-        <tr id='row${rowCount}'>
-          <td style="width: 10%;">
-            <div>
-              <select class='form-control bg-light text-dark  border-0 item_select itm' name='item[]' id='item${rowCount}'>
-                <option value=" " selected disabled>Select Item</option>
-                {% for i in itm %}
-                  <option value="{{i.item_name}}">{{ i.item_name }}</option>
-                {% endfor %}
-              </select>
-            </div>
-          </td>
-          <td style="width: 13%;" class='text-right'><input type='number' id='hsn${rowCount}'
-                      class=' text-right form-control bg-light text-dark hsn' name='hsn[]'
-                      value='0'>
-              </td>
-  
-        
-  
-          
-          <td style="width: 13%;" class='text-right'>
-            <input type='number' id='qty${rowCount}' class='text-right bg-light text-dark qty form-control' name='quantity[]' value='0'>
-          </td>
-          
-          <td style="width: 15%;" class='text-right'>
-            <input type='number' id='rate${rowCount}' class='text-right bg-light text-dark rate form-control' name='rate[]' value='0'>
-          </td>
-          
-          <td style="width: 12%;" class='text-right'>
-            <input type='number' id='discount${rowCount}' class='text-right bg-light text-dark discount form-control' name='des[]' value='0'>
-          </td>
-          
-          <td style="width: 15%;" class='text-right'>
-            <select name='tax[]'  id='tax${rowCount}' class='form-control bg-light text-dark text-right border-0 tax' onclick=' toggleDateInput()'>
-              <optgroup class="text-center" label="GST">
-                              <option value="0" selected></option>
-                              <option value="0">0% GST(0%)</option>
-                              <option value="3">3.0% GST(3%)</option>
-                              <option value="5">5.0% GST(5%)</option>
-                              <option value="12">12.0% GST(12%)</option>
-                              <option value="18">18.0% GST(18%)</option>
-                              <option value="28">28.0% GST(28%)</option>
-                            </optgroup>
-                            <optgroup  class="text-center" label="IGST">
-                             
-                              <option value="0">0% IGST(0%)</option>
-                              <option value="3">3.0% IGST(3%)</option>
-                              <option value="5">5.0% IGST(5%)</option>
-                              <option value="12">12.0% IGST(12%)</option>
-                              <option value="18">18.0% IGST(18%)</option>
-                              <option value="28">28.0% IGST(28%)</option>             
-                              </optgroup>
-            </select>
-          </td>
-          
-          <td style="display: none;">
-            <input type="text" name='taxamount' id="taxamount${rowCount}" class="form-control bg-light text-dark taxamount" />
-          </td>
-          
-          <td style="width: 15%;" class='text-right'>
-            <input type='number' id='amount${rowCount}' class='text-right bg-light text-dark form-control amount' name='amount[]' value='0.00'>
-          </td>
-          
-          <td class='text-center'>
-            <button type='button' id='del_btn${rowCount}' class='btn btn-transparent text-danger btn-sm btn-outline-danger rounded-circle delete-row' style='width:30px'>X</button>
-          </td>
-          <td class='text-center'>
-          <button type='button' class='btn btn-transparent text-primary btn-sm btn-outline-primary rounded-circle clone-row' data-row='${rowCount}' style='width:30px'><i class="fa fa-clone"></i>
-  </button>
-        </td>
-        </tr>
-      `;
-    $('#item_table tbody').append(newRow);
-      toggleDateInput();
-      calculateSubtotal();
-      calculateGrandTotal();
-    });
-  
-      $('#item_table tbody').append(clonedRow);
-      calculateRowAmount(row);
-      calculateSubtotal();
-      calculateGrandTotal();
-      toggleDateInput();
-      calculateTaxAmount();
-      toggleDateInput();
-    });
-  
-    // Event handler for "Add another line" button
-    $('#add-row-button').click(function () {
-      var lastRow = $('#item_table tbody tr:last'); // Get the last row
-      var newRow = lastRow.clone(); // Clone the last row
-      var newRowId = 'row' + rowCount; // Generate a new ID for the cloned row
-      newRow.attr('id', newRowId); // Set the new ID for the cloned row
-  
-      // Clear input values in the cloned row if needed
-      newRow.find('input[type="number"]').val(0);
-  
-      $('#item_table tbody').append(newRow);
-      rowCount++; // Increment row counter
-    });
-  });
-   {% endcomment %}
-  
-  // Change event listener for the tax dropdown
-  $('#item_table').on('change', 'select[name^="tax"]', function () {
-      // Calculate CGST, SGST, or IGST based on the selected tax type
-      var selectedTaxType = $(this).val();
-      var subtotal = parseFloat($('#subtotal').val()) || 0;
-  
-      if (selectedTaxType === '0' || selectedTaxType === '3' || selectedTaxType === '5' || selectedTaxType === '12' || selectedTaxType === '18' || selectedTaxType === '28') {
-          // GST selected
-          var gstPercentage = parseFloat(selectedTaxType);
-          var cgst = (subtotal * (gstPercentage / 2)) / 100;
-          var sgst = cgst;
-  
-          $('#tr_cgst').show();
-          $('#tr_sgst').show();
-          $('#tr_igst').hide();
-  
-          $('#cgst').val(cgst.toFixed(2));
-          $('#sgst').val(sgst.toFixed(2));
-          $('#igst').val('0.00');
-      } else {
-          // IGST selected
-          $('#tr_cgst').hide();
-          $('#tr_sgst').hide();
-          $('#tr_igst').show();
-  
-          $('#cgst').val('0.00');
-          $('#sgst').val('0.00');
-          $('#igst').val(subtotal.toFixed(2));
-      }
-  
-      // Update tax total
-      calculateTaxTotal();
-  });
-  </script>
+
+
   <script>
       
 
