@@ -12,6 +12,8 @@ from datetime import timedelta
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.template.response import TemplateResponse
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
 
 
 # Create your views here.
@@ -2353,4 +2355,141 @@ def sales_first(request):
 
 @login_required(login_url='login')
 def create_sale(request):
-  return render(request,'company/create_sale.html')
+    userid = request.user.id 
+
+    try:
+        Company = company.objects.get(user=request.user.id)
+        item = ItemModel.objects.filter(user=userid)
+        print('company state', Company.state)
+
+        # Using filter instead of get to handle multiple party objects
+        parti = party.objects.filter(user=request.user.id)
+
+        # Assuming you want to display the state of the first party if multiple
+        pa = parti.first()
+        if pa is None:
+            # Handle the case where no party is found
+            return HttpResponse("No party found for the user.")
+
+        print('party state', pa.state)
+
+
+        context = {
+            'item': item,
+            'parti': parti,
+            'company': Company,
+            'pa': pa,
+        }
+
+        return render(request, 'company/create_sale.html', context)
+
+    except company.DoesNotExist:
+        # Handle the case where the company does not exist
+        return HttpResponse("Company does not exist.")
+
+
+@login_required(login_url='login')
+def new_creditnote_item(request):
+  print('items')
+  if request.method=='POST':
+    user = User.objects.get(id=request.user.id)
+    company_user_data = company.objects.get(user=request.user.id)
+    item_name = request.POST.get('item_name')
+    item_hsn = request.POST.get('item_hsn')
+    item_unit = request.POST.get('item_unit')
+    item_taxable = request.POST.get('item_taxable')
+    item_gst = request.POST.get('item_gst')
+    item_igst = request.POST.get('item_igst')
+    item_sale_price = request.POST.get('item_sale_price')
+    item_purchase_price = request.POST.get('item_purchase_price')
+    item_opening_stock = request.POST.get('item_opening_stock')
+    item_current_stock = item_opening_stock
+    if item_opening_stock == '' or None :
+      item_opening_stock = 0
+      item_current_stock = 0
+    item_at_price = request.POST.get('item_at_price')
+    if item_at_price == '' or None:
+      item_at_price =0
+    item_date = request.POST.get('item_date')
+    item_min_stock_maintain = request.POST.get('item_min_stock_maintain')
+    if item_min_stock_maintain == ''  or None:
+      item_min_stock_maintain = 0
+    item_data = ItemModel(user=user,
+                          company=company_user_data,
+                          item_name=item_name,
+                          item_hsn=item_hsn,
+                          item_unit=item_unit,
+                          item_taxable=item_taxable,
+                          item_gst=item_gst,
+                          item_igst=item_igst,
+                          item_sale_price=item_sale_price,
+                          item_purchase_price=item_purchase_price,
+                          item_opening_stock=item_opening_stock,
+                          item_current_stock=item_current_stock,
+                          item_at_price=item_at_price,
+                          item_date=item_date,
+                          item_min_stock_maintain=item_min_stock_maintain)
+    item_data.save()
+    return JsonResponse({
+            'status': 'success',
+            'message': 'Item added successfully',
+            'item_id': item_data.id,
+            'item_name': item_data.item_name,
+            'item_hsn': item_data.item_hsn,
+        })
+  else:
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+  
+
+def get_hsn_for_item(request):
+    selected_item = request.GET.get('item_name')
+    item = get_object_or_404(ItemModel, item_name=selected_item)
+
+    return JsonResponse({'hsn': item.item_hsn,'rate':item.item_sale_price})
+
+@login_required(login_url='login')
+def get_party_number(request):
+    selected_party = request.GET.get('partyname')
+    party_instance = get_object_or_404(party, party_name=selected_party)
+    phone_number = party_instance.contact
+    
+    return JsonResponse({'phone': phone_number})
+@login_required(login_url='login')
+def get_party_balance(request):
+    selected_party = request.GET.get('partyname')
+    party_instance = get_object_or_404(party, party_name=selected_party)
+    balnce = party_instance.openingbalance
+    return JsonResponse({'balance':balnce})
+
+# @login_required(login_url='login')
+# def state_supply(request):
+#     try:
+#         company_instance = company.objects.get(user=request.user.id)
+#         party_instance = party.objects.get(user=request.user.id)
+
+#         company_state = company_instance.state
+#         print('company_state', company_state)
+#         party_state = party_instance.state
+#         print('party_state', party_state)
+
+#         is_same_state = company_state == party_state
+#         print('is_same_state',is_same_state)
+#     except (company.DoesNotExist, party.DoesNotExist):
+#         # Handle the case where the company or party does not exist
+#         is_same_state = False
+
+#     context = {
+#         'is_same_state': is_same_state,
+#         # Other context variables if needed
+#     }
+
+#     return render(request, 'company/create_sale.html', context)
+
+
+@login_required(login_url='login')
+def creditnote_list(request):
+
+  return render(request,'company/creditlist.html')
+
+
+

@@ -203,21 +203,20 @@
                   </div>
                 </div>
               </div>
+             
               <div class="form-group  justify-content-end" style="margin-left:990px;margin-top:12px;">
                 <div class="row mt-1" >
                   <div class="col-md-3">
                     <label for="source of supply">State Of Supply:</label>
                   </div>
+                  <input value="{{pa.state}}" id="partystateValue" type="hidden">
+                  <input value="{{company.state}}" id="companystateValue" type="hidden">
                   <div class="col-md-2">
-                    <select name="destination" id="destination" class="form-control bg-white text-dark"style="width:280px;margin-left:-150px;margin-top:12px;">
-                      
-                    
-                      
-                       {% if is_same_state %}
-                      <option value="State">state</option>
-                      {% else %}
+                    <select name="destination" id="destination" class="form-control bg-white text-dark" style="width:280px;margin-left:-150px;margin-top:12px;">
+                     
+                      <option value="State">State</option>
                       <option value="Other State">Other State</option>
-                      {% endif %} 
+                     
                       <option value="[AN]-Andaman And Nicobar Islands" >[AN]-Andaman And Nicobar Islands</option>
                       <option value="[AD]-Andhra Pradesh" >[AD]-Andhra Pradesh</option>
                       <option value="[AR]-Arunachal Pradesh">[AR]-Arunachal Pradesh</option>
@@ -282,7 +281,7 @@
                         <td  class="text-right" style="width: 10%;color:000;">1{{forloop.counter}}</td>
                         <td style="width: 10%;">
                           <div >
-                            <select class='form-control bg-light text-dark border-0 item_select itm' name='item_name[]' id='item1' onchange="fetchItemData(this.value)">
+                            <select class='form-control bg-light text-dark border-0 item_select itm' name='item_name[]' id='item1' onchange='fetchItemData(this.value, " + counter + ")'>
                               <option value=" " selected disabled>Select Item</option>
                                 {% for i in item %}
                               <option value="{{i.item_name}}">{{ i.item_name}} </option>
@@ -300,7 +299,7 @@
                         <td style="width: 12%;" class='text-right text-dark'><input type='number' id='rate1' class=' text-right discount bg-light text-dark form-control rate' name='rate[]' value='0'>
                         </td>
                         
-                        <input  value="{{parti.state}}"  id="stateValue" type="hidden">
+                       
                        
                         <td style="width: 15%;" class='text-right'> 
                           <select name='tax[]' id='tax1' class='form-control bg-light text-dark text-right border-0 tax' onclick="toggleDateInput()">
@@ -680,6 +679,52 @@
   </div>  
 </div>
 
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+      // Get the elements
+      var stateSelect = document.getElementById('destination');
+      var taxSelect = document.getElementById('tax1');
+
+      // Add an event listener to the state select to trigger the change in tax options
+      stateSelect.addEventListener('change', function () {
+          updateTaxOptions();
+      });
+
+      // Initial call to set tax options based on the default state
+      updateTaxOptions();
+
+      function updateTaxOptions() {
+          // Get the selected state
+          var selectedState = stateSelect.value;
+
+          // Clear existing options
+          taxSelect.innerHTML = '';
+
+          // Create options based on the selected state
+          if (selectedState === 'State') {
+              // If state is selected, show GST options
+              addTaxOptions(['0', '3', '5', '12', '18', '28'], 'GST');
+          } else {
+              // If Other State or any specific state, show IGST options
+              addTaxOptions(['0', '3', '5', '12', '18', '28'], 'IGST');
+          }
+      }
+
+      function addTaxOptions(values, label) {
+          var optgroup = document.createElement('optgroup');
+          optgroup.label = label;
+
+          values.forEach(function (value) {
+              var option = document.createElement('option');
+              option.value = value;
+              option.text = value + '% ' + label + '(' + value + '%)';
+              optgroup.appendChild(option);
+          });
+
+          taxSelect.appendChild(optgroup);
+      }
+  });
+</script>
 
 
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
@@ -692,6 +737,38 @@
     $("#date1").val(currentDate);
   });
 </script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Get the values of parti.state and company.state
+    var partiState = document.getElementById('partystateValue').value; // Assuming this is where you store parti.state
+    var companyState = document.getElementById('companystateValue').value; // Assuming this is where you store company.state
+
+    // Get the select element
+    var destinationSelect = document.getElementById('destination');
+
+    // Check if parti.state and company.state are the same
+    if (partiState === companyState) {
+      // If they are the same, find the 'State' option and set it as selected
+      selectOptionByValue(destinationSelect, 'State');
+    } else {
+      // If they are different, find the 'Other State' option and set it as selected
+      selectOptionByValue(destinationSelect, 'Other State');
+    }
+
+    // Function to select an option in a dropdown by value
+    function selectOptionByValue(select, value) {
+      for (var i = 0; i < select.options.length; i++) {
+        var option = select.options[i];
+        if (option.value === value) {
+          option.selected = true;
+          break; // exit the loop once the desired option is selected
+        }
+      }
+    }
+  });
+</script>
+
 
 
 
@@ -746,17 +823,26 @@
 <script>
   $(document).ready(function () {
     // Counter to keep track of the number of rows
+  
     var counter = 1;
-
+   
+   
     // Function to add a new row to the table
     function addRow() {
       counter++;
       var newRow = $("<tr id='row" + counter + "'>");
       var cols = "";
-
-      // Generate the HTML for the new row with updated ids
+  
       cols += "<td class='text-right' style='width: 10%;color:000;'>" + counter + "</td>";
-      cols += "<td style='width: 10%;'><div><select class='form-control bg-light text-dark border-0 item_select itm' name='item_name[]' id='item" + counter + "' onchange='fetchItemData(this.value)'><option value='' selected disabled>Select Item</option>{% for i in item %}<option value='" + i.item_name + "'>" + i.item_name + "</option>{% endfor %}</select></div></td>";
+      cols += "<td style='width: 10%;'><div><select class='form-control bg-light text-dark border-0 item_select itm' name='item_name[]' id='item" + counter + "' onchange='fetchItemData(this.value, " + counter + ")'><option value='' selected disabled>Select Item</option>";
+  
+      // Using Django template syntax to loop through items and generate options
+      {% for i in item %}
+      cols += "<option value='{{ i.item_name }}'>" + "{{ i.item_name }}" + "</option>";
+      {% endfor %}
+  
+      cols += "</select></div></td>";
+  
       cols += "<td style='width: 13%;' class='text-right'><input type='number' id='hsn" + counter + "' class='text-right form-control bg-light text-dark hsn' name='hsn[]' value='0'></td>";
       cols += "<td style='width: 15%;' class='text-right'><input type='number' id='qty" + counter + "' class='text-right form-control bg-light text-dark' name='quantity[]' value='0'></td>";
       cols += "<td style='width: 12%;' class='text-right text-dark'><input type='number' id='rate" + counter + "' class='text-right discount bg-light text-dark form-control rate' name='rate[]' value='0'></td>";
@@ -767,48 +853,74 @@
       cols += "<td style='width: 15%;' class='text-right'><input type='number' id='amount" + counter + "' class='text-right form-control amount bg-light text-dark' name='amount[]' value='0.00'></td>";
       cols += "<td class='text-center'><button type='button' id='del_btn" + counter + "' class='btn btn-transparent text-danger btn-sm btn-outline-danger rounded-circle delete-row' style='width:30px'>X</button></td>";
       cols += "<td class='text-center'><button type='button' class='btn btn-transparent text-primary btn-sm btn-outline-primary rounded-circle clone_row' data-row='" + counter + "' style='width:30px'><i class='fa fa-clone'></i></button></td>";
-
+  
       newRow.append(cols);
+      
       $("#items-table-body").append(newRow);
+  
+      // Fetch data for the newly added row
+      fetchItemData($("#item" + counter).val(), counter);
     }
-
+   
     // Handle click event on the "Add another line" button
     $("#add").click(function () {
       addRow();
+    
     });
-
+    $(document).click(function () {
+      fetchItemData($("#item1" ).val(), 1);
+    });
+  
+    // You might need to adjust the following event handlers based on your actual requirements
+  
+   
+  
     // You might need to adjust the following event handlers based on your actual requirements
 
     // Delete row button click event
-    $(document).on("click", ".delete-row", function () {
-      var rowId = $(this).closest("tr").attr("id");
-      $("#" + rowId).remove();
-    });
-
-    // Clone row button click event
     $(document).on("click", ".clone_row", function () {
       var rowToClone = $(this).data("row");
-      var clonedRow = $("#" + rowToClone).clone();
-
+      var previousRow = $("#" + rowToClone);
+      var clonedRow = previousRow.clone();
+    
       // Update ids in the cloned row
-      clonedRow.attr("id", "row" + counter);
-      clonedRow.find("[id^='item']").attr("id", "item" + counter);
-      clonedRow.find("[id^='hsn']").attr("id", "hsn" + counter);
-      clonedRow.find("[id^='qty']").attr("id", "qty" + counter);
-      clonedRow.find("[id^='rate']").attr("id", "rate" + counter);
-      clonedRow.find("[id^='stateValue']").attr("id", "stateValue" + counter);
-      clonedRow.find("[id^='tax']").attr("id", "tax" + counter);
-      clonedRow.find("[id^='taxamount']").attr("id", "taxamount" + counter);
-      clonedRow.find("[id^='discount']").attr("id", "discount" + counter);
-      clonedRow.find("[id^='amount']").attr("id", "amount" + counter);
-
+      clonedRow.attr("id", "row" + (++counter)); // Increment the counter before updating IDs
+    
+      // Find all elements with IDs in the cloned row and update them
+      clonedRow.find("[id]").each(function () {
+        var oldId = $(this).attr("id");
+        var newId = oldId.slice(0, -1) + counter; // Remove the last character and append the new counter
+        $(this).attr("id", newId);
+      });
+    
       // Append the cloned row
-      $("#" + rowToClone).after(clonedRow);
-      counter++;
+      previousRow.after(clonedRow);
     });
-  });
+    
+});
 </script>
 
+
+<script>
+  
+  function fetchItemData(selectedItem, rowId) {
+    // Make an AJAX request to fetch the HSN number for the selected item
+    $.ajax({
+      type: 'GET',
+      url: '{% url "get_hsn_for_item" %}',
+      data: { 'item_name': selectedItem },
+      success: function (data) {
+        // Update the HSN and rate input fields with the fetched values for the specific row
+        $(`#hsn${rowId}`).val(data.hsn);
+        $(`#rate${rowId}`).val(data.rate);
+      },
+      error: function (xhr, status, error) {
+        console.error('AJAX request failed:', error);
+      },
+    });
+  }
+  
+</script>
 
 
 
@@ -861,7 +973,7 @@
             // Update the dropdown dynamically with both item ID and item name/HSN
             $('#item1').append($('<option>', {
               value: response.item_id,
-              text: response.item_name + ' - ' + response.item_hsn,
+              text: response.item_name 
             }));
 
             // Close the modal properly
@@ -885,104 +997,6 @@
     });
   });
 </script>
-{% comment %} <script>
-  $(document).ready(function () {
-    var rowCount = 2; // Initialize rowCount to the next available number
-  
-    // Function to update input IDs in a cloned row
-    function updateInputIds(clonedRow, newRowNumber) {
-      clonedRow.find('select, input').each(function () {
-        // Update the ID by replacing the number in the original ID with the new row number
-        var originalId = $(this).attr('id');
-        var updatedId = originalId.replace(/\d+/, newRowNumber);
-        $(this).attr('id', updatedId);
-      });
-    }
-  
-    // Function to fetch and populate HSN dynamically
-    function bindItemSelectEvent(row) {
-      row.find('.item_select').on('change', function () {
-        var selectedItem = $(this).val();
-        var hsnInput = $(this).closest('tr').find('.hsn');
-        var rateInput = $(this).closest('tr').find('.rate');
-  
-        // Make an AJAX request to fetch the HSN and rate for the selected item
-        $.ajax({
-          type: 'GET',
-          url: '{% url "get_hsn_for_item" %}', // Replace with the actual URL for fetching HSN
-          data: { 'selectedItem': selectedItem },
-          success: function (data) {
-            // Update the HSN and rate input fields with the fetched values
-            hsnInput.val(data.hsn);
-            rateInput.val(data.rate);
-          },
-          error: function (xhr, status, error) {
-            console.error('AJAX request failed:', error);
-          },
-        });
-      });
-    }
-  
-    // Event handler for clone button
-    $('#item_table').on('click', '.clone-row', function () {
-      var row = $(this).closest('tr');
-      var clonedRow = row.clone(); // Clone the entire row
-      var newRowId = 'row' + rowCount; // Generate a new ID for the cloned row
-      clonedRow.attr('id', newRowId); // Set the new ID for the cloned row
-  
-      // Clear input values in the cloned row if needed
-      clonedRow.find('input[type="number"]').val(0);
-  
-      // Update the IDs for the cloned row's input fields
-      updateInputIds(clonedRow, rowCount);
-  
-      // Unbind and rebind the item select event for the cloned row
-      clonedRow.find('.item_select').off('change');
-      bindItemSelectEvent(clonedRow);
-  
-      rowCount++; // Increment row counter
-      $('#item_table tbody').append(clonedRow);
-  
-      calculateSubtotal();
-      calculateGrandTotal();
-      toggleDateInput();
-      calculateTaxAmount();
-    });
-  
-    // Event handler for "Add another line" button
-    $('#add-row-button').click(function () {
-      var lastRow = $('#item_table tbody tr:last'); // Get the last row
-      var newRow = lastRow.clone(); // Clone the last row
-      var newRowId = 'row' + rowCount; // Generate a new ID for the cloned row
-      newRow.attr('id', newRowId); // Set the new ID for the cloned row
-  
-      // Clear input values in the cloned row if needed
-      newRow.find('input[type="number"]').val(0);
-  
-      // Update the IDs for the cloned row's input fields
-      updateInputIds(newRow, rowCount);
-  
-      // Unbind and rebind the item select event for the cloned row
-      newRow.find('.item_select').off('change');
-      bindItemSelectEvent(newRow);
-  
-      $('#item_table tbody').append(newRow);
-      rowCount++; // Increment row counter
-  
-      calculateSubtotal();
-      calculateGrandTotal();
-      toggleDateInput();
-      calculateTaxAmount();
-    });
-    
-    // Bind the item select event for the initial row
-    bindItemSelectEvent($('#item_table tbody tr:first'));
-  
-    // ... (Rest of your code)
-  });
-  
-</script> {% endcomment %}
-
 
 
 
