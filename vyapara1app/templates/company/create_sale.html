@@ -17,7 +17,7 @@
 <style>
 
   .table{
-    width:50%;
+    width:57%;
     margin-left:250px;
   }
   .row a{
@@ -150,7 +150,7 @@
                       <select id="partySelect" name="partyname ">
                         <option >Select a Party</option>
                         {% for p in parti %}
-                        <option id="{{p.party_name}}">{{p.party_name}}</option>
+                        <option id="{{p.party_name}}"  data-state="{{ p.state }}">{{p.party_name}}</option>
                         {% endfor %}
                       </select>
                     </div>
@@ -203,13 +203,16 @@
                   </div>
                 </div>
               </div>
-             
+              <label for="source of supply">{{p.state}}</label>
               <div class="form-group  justify-content-end" style="margin-left:990px;margin-top:12px;">
                 <div class="row mt-1" >
                   <div class="col-md-3">
                     <label for="source of supply">State Of Supply:</label>
+                 
                   </div>
-                  <input value="{{pa.state}}" id="partystateValue" type="hidden">
+                  
+                  <input value="{{p.state}}" id="partystateValue" type="hidden">
+                 
                   <input value="{{company.state}}" id="companystateValue" type="hidden">
                   <div class="col-md-2">
                     <select name="destination" id="destination" class="form-control bg-white text-dark" style="width:280px;margin-left:-150px;margin-top:12px;">
@@ -679,52 +682,146 @@
   </div>  
 </div>
 
+
+<!-- Add the following script in your HTML file or include it in a separate JavaScript file -->
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-      // Get the elements
-      var stateSelect = document.getElementById('destination');
-      var taxSelect = document.getElementById('tax1');
+  // Function to calculate the total for a row
+  function calculateRowTotal(rowNumber) {
+    var quantity = parseFloat(document.getElementById('qty' + rowNumber).value) || 0;
+    var rate = parseFloat(document.getElementById('rate' + rowNumber).value) || 0;
+    var discount = parseFloat(document.getElementById('discount').value) || 0;
 
-      // Add an event listener to the state select to trigger the change in tax options
-      stateSelect.addEventListener('change', function () {
-          updateTaxOptions();
-      });
+    var total = quantity * rate - discount;
 
-      // Initial call to set tax options based on the default state
-      updateTaxOptions();
+    // Update the amount field for the row
+    document.getElementById('amount' + rowNumber).value = total.toFixed(2);
+    
+    // Recalculate the overall total
+    calculateOverallTotal();
+  }
 
-      function updateTaxOptions() {
-          // Get the selected state
-          var selectedState = stateSelect.value;
+  // Function to calculate the overall total
+  function calculateOverallTotal() {
+    var rows = document.getElementsByClassName('amount');
+    var overallTotal = 0;
 
-          // Clear existing options
-          taxSelect.innerHTML = '';
+    for (var i = 0; i < rows.length; i++) {
+      overallTotal += parseFloat(rows[i].value) || 0;
+    }
 
-          // Create options based on the selected state
-          if (selectedState === 'State') {
-              // If state is selected, show GST options
-              addTaxOptions(['0', '3', '5', '12', '18', '28'], 'GST');
-          } else {
-              // If Other State or any specific state, show IGST options
-              addTaxOptions(['0', '3', '5', '12', '18', '28'], 'IGST');
-          }
-      }
+    // Display the overall total
+    document.getElementById('overallTotal').textContent = overallTotal.toFixed(2);
+  }
 
-      function addTaxOptions(values, label) {
-          var optgroup = document.createElement('optgroup');
-          optgroup.label = label;
+  // Add event listeners for input fields to trigger calculations
+  document.addEventListener('input', function (event) {
+    var targetId = event.target.id;
+    if (targetId.startsWith('qty') || targetId.startsWith('rate') || targetId === 'discount') {
+      // Extract the row number from the target ID
+      var rowNumber = targetId.match(/\d+/)[0];
+      calculateRowTotal(rowNumber);
+    }
+  });
 
-          values.forEach(function (value) {
-              var option = document.createElement('option');
-              option.value = value;
-              option.text = value + '% ' + label + '(' + value + '%)';
-              optgroup.appendChild(option);
-          });
+  // Add event listener for the "Add another line" button to clone a row
+  document.getElementById('add').addEventListener('click', function () {
+    var table = document.getElementById('yourTableId'); // Replace 'yourTableId' with the actual ID of your table
+    var clone = table.rows[1].cloneNode(true); // Clone the first row
 
-          taxSelect.appendChild(optgroup);
-      }
+    // Clear values in the cloned row
+    var inputs = clone.getElementsByTagName('input');
+    for (var i = 0; i < inputs.length; i++) {
+      inputs[i].value = '0';
+    }
+
+    // Increment the counter in the first cell of the cloned row
+    var counter = parseInt(clone.cells[0].textContent.match(/\d+/)[0]) + 1;
+    clone.cells[0].textContent = '1' + counter;
+
+    // Append the cloned row to the table
+    table.tBodies[0].appendChild(clone);
+
+    // Recalculate the overall total
+    calculateOverallTotal();
   });
 </script>
+
+
+
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Get the parent container that holds dynamically added rows
+    var table = document.getElementById('your-table-id'); // Replace 'your-table-id' with the actual ID of your table
+  
+    // Add an event listener to the table to handle dynamic changes
+    table.addEventListener('change', function (event) {
+      var target = event.target;
+  
+      // Check if the change occurred in the state select dropdown
+      if (target.classList.contains('destination')) {
+        updateTaxOptions(target);
+      }
+    });
+  
+    // Trigger the change event to set up initial tax options for existing rows
+    document.querySelectorAll('.destination').forEach(function (stateSelect) {
+      updateTaxOptions(stateSelect);
+    });
+  
+    // Function to update tax options based on the selected state
+    function updateTaxOptions(stateSelect) {
+      var selectedState = stateSelect.value;
+      var taxSelect = stateSelect.closest('tr').querySelector('.tax1'); // Assuming that the tax dropdown is in the same row
+  
+      console.log('Selected State:', selectedState);
+  
+      // Clear existing options
+      taxSelect.innerHTML = '';
+  
+      // Create options based on the selected state
+      var taxOptions;
+  
+      if (selectedState === 'State') {
+        // GST options
+        taxOptions = ['0', '3', '5', '12', '18', '28'];
+        addOptions(taxOptions, 'GST', taxSelect);
+      } else {
+        // IGST options
+        taxOptions = ['0', '3', '5', '12', '18', '28'];
+        addOptions(taxOptions, 'IGST', taxSelect);
+      }
+    }
+  
+    // Function to add options to a dropdown
+    function addOptions(options, type, selectElement) {
+      options.forEach(function (value) {
+        var option = document.createElement('option');
+        option.value = value;
+        option.text = value + '% ' + type + '(' + value + '%)';
+        selectElement.appendChild(option);
+      });
+    }
+  
+    // Function to add a new row
+    function addRow() {
+      // Your logic to add a new row, make sure to include proper identifiers for new elements
+      // ...
+  
+      // After adding a new row, update tax options for the new row
+      updateTaxOptions(newStateSelect); // Provide the newly added state select element
+    }
+  });
+  
+  
+</script>
+
+
+
+
+
+
 
 
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
@@ -740,35 +837,90 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    // Get the values of parti.state and company.state
-    var partiState = document.getElementById('partystateValue').value; // Assuming this is where you store parti.state
-    var companyState = document.getElementById('companystateValue').value; // Assuming this is where you store company.state
+    // Get the elements
+    var stateSelect = document.getElementById('destination');
+    var taxSelect = document.getElementById('tax1');
+    var partySelect = document.getElementById('partySelect');
 
-    // Get the select element
-    var destinationSelect = document.getElementById('destination');
+    // Add an event listener to the state select to trigger the change in tax options
+    stateSelect.addEventListener('change', function () {
+      updateTaxOptions();
+    });
 
-    // Check if parti.state and company.state are the same
-    if (partiState === companyState) {
-      // If they are the same, find the 'State' option and set it as selected
-      selectOptionByValue(destinationSelect, 'State');
-    } else {
-      // If they are different, find the 'Other State' option and set it as selected
-      selectOptionByValue(destinationSelect, 'Other State');
+    // Add an event listener to the party dropdown
+    partySelect.addEventListener('change', function () {
+      // Update the source of supply dropdown
+      updateSourceOfSupply();
+      // Update the tax options based on the new source of supply
+      updateTaxOptions();
+    });
+
+    // Initial call to set tax options and source of supply based on the default state
+    updateTaxOptions();
+    updateSourceOfSupply();
+
+    function updateSourceOfSupply() {
+      var partyState = partySelect.options[partySelect.selectedIndex].getAttribute('data-state');
+      var companyState = document.getElementById('companystateValue').value.trim();
+      var destinationSelect = document.getElementById('destination');
+
+      if (companyState === partyState) {
+        selectOptionByValue(destinationSelect, 'State');
+      } else {
+        selectOptionByValue(destinationSelect, 'Other State');
+      }
+    }
+
+    function updateTaxOptions() {
+      var selectedState = stateSelect.value;
+      console.log('Selected State:', selectedState);
+
+      // Clear existing options
+      taxSelect.innerHTML = '';
+
+      // Create options based on the selected state
+      var taxOptions;
+
+      if (selectedState === 'State') {
+        // GST options
+        taxOptions = ['0', '3', '5', '12', '18', '28'];
+        addOptions(taxOptions, 'GST');
+      } else {
+        // IGST options
+        taxOptions = ['0', '3', '5', '12', '18', '28'];
+        addOptions(taxOptions, 'IGST');
+      }
+    }
+
+    function addOptions(options, type) {
+      options.forEach(function (value) {
+        var option = document.createElement('option');
+        option.value = value;
+        option.text = value + '% ' + type + '(' + value + '%)';
+        taxSelect.appendChild(option);
+      });
     }
 
     // Function to select an option in a dropdown by value
     function selectOptionByValue(select, value) {
       for (var i = 0; i < select.options.length; i++) {
         var option = select.options[i];
-        if (option.value === value) {
+        if (option.value.trim() === value) {
           option.selected = true;
-          break; // exit the loop once the desired option is selected
+          break;
         }
       }
     }
+
+    // Automatically set the default value of the destination dropdown to 'State'
+    stateSelect.value = 'State';
+
+    // Trigger the change event to update tax options and source of supply accordingly
+    addRow()
+    updateTaxOptions();
+    updateSourceOfSupply();
   });
 </script>
-
 
 
 
