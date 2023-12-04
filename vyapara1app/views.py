@@ -12,8 +12,15 @@ from datetime import timedelta
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.template.response import TemplateResponse
-from django.shortcuts import get_object_or_404
-from django.http import JsonResponse
+from django.db.models import F
+from openpyxl import load_workbook
+from django.http.response import JsonResponse, HttpResponse
+from openpyxl import Workbook
+from num2words import num2words
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponse
 
 
 # Create your views here.
@@ -23,32 +30,9 @@ def home(request):
 
 
     
-def homepage(request):
-  com =  company.objects.get(user = request.user)
-  allmodules= modules_list.objects.get(company=com.id,status='New')
-  context = {
-              'company' : com,
-              'allmodules':allmodules
-          }
-  return render(request, 'company/homepage.html', context)
 
-# @login_required(login_url='login')
-def staffhome(request):
-  if 'staff_id' in request.session:
-    if request.session.has_key('staff_id'):
-      staff_id = request.session['staff_id']
-           
-    else:
-      return redirect('/')
-  staff =  staff_details.objects.get(id=staff_id)
 
-  allmodules= modules_list.objects.get(company=staff.company,status='New')
-  context = {
-              'staff' : staff,
-              'allmodules':allmodules
 
-          }
-  return render(request, 'staff/staffhome.html', context)
 
 
 
@@ -109,7 +93,25 @@ def sale_invoices(request):
   return render(request, 'sale_invoices.html')
 
 def estimate_quotation(request):
-  return render(request, 'estimate_quotation.html')
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+           
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    allmodules= modules_list.objects.get(company=com.id,status='New')
+    all_estimates = Estimate.objects.filter(company = com)
+    estimates = []
+    for est in all_estimates:
+      history = EstimateTransactionHistory.objects.filter(company = com, estimate = est).last()
+      dict = {'estimate':est,'history':history}
+      estimates.append(dict)
+    context = {
+      'staff':staff,'company':com,'allmodules':allmodules, 'estimates':estimates,
+    }
+    return render(request, 'staff/estimate_quotation.html',context)
 
 def payment_in(request):
   return render(request, 'payment_in.html')
@@ -154,67 +156,15 @@ def hide_options(request):
 def company_reg(request):
   return render(request,'company/register.html')
 
-def register(request):
-  if request.method == 'POST':
-    first_name = request.POST['fname']
-    last_name = request.POST['lname']
-    user_name = request.POST['uname']
-    email_id = request.POST['eid']
-    mobile = request.POST['ph']
-    passw = request.POST['pass']
-    c_passw = request.POST['cpass']
-    action = request.POST['r']
-    did = request.POST['did']
-    if did != '':
-      if Distributors_details.objects.filter(distributor_id=did).exists():
-        distributor = Distributors_details.objects.get(distributor_id=did)
-      else :
-          messages.info(request, 'Sorry, distributor id does not exists')
-          return redirect('company_reg')
-    
 
-    
-    if passw == c_passw:
-      if User.objects.filter(username = user_name).exists():
-        messages.info(request, 'Sorry, Username already exists')
-        return redirect('company_reg')
-      
-
-      elif not User.objects.filter(email = email_id).exists():
-        
-        user_data = User.objects.create_user(first_name = first_name,
-                        last_name = last_name,
-                        username = user_name,
-                        email = email_id,
-                        password = passw)
-        user_data.save()
-        if did != '':
-          data = User.objects.get(id = user_data.id)
-          cust_data = company( contact=mobile,
-                             user = data,reg_action=action,Distributors=distributor)
-          cust_data.save()
-        
-          return redirect('company_reg2')
-        else:
-          data = User.objects.get(id = user_data.id)
-          cust_data = company( contact=mobile,
-                             user = data,reg_action=action)
-          cust_data.save()
-        
-          return redirect('company_reg2')
-      else:
-        messages.info(request, 'Sorry, Email already exists')
-        return redirect('company_reg')
-    return render(request,'company/register.html')
     
     
 def company_reg2(request):
   terms=payment_terms.objects.all()
-  
   return render(request,'company/register2.html',{'terms':terms})  
+
 def add_company(request):
   
-  print(id)
   if request.method == 'POST':
     email=request.POST['email']
     user=User.objects.get(email=email)
@@ -242,10 +192,6 @@ def add_company(request):
     end= date.today() + timedelta(days=days)
     c.End_date=end
 
-
-    
-    
-
     code=get_random_string(length=6)
     if company.objects.filter(Company_code = code).exists():
        code2=get_random_string(length=6)
@@ -255,6 +201,11 @@ def add_company(request):
 
    
     c.save()
+
+    staff = staff_details.objects.get(email=email,position='company',company=c)
+    staff.first_name = request.POST['cname']
+    staff.last_name = ''
+    staff.save()
     # messages.success(request, 'Welcome'+ ' ' +  user.first_name +' '+user.last_name + ' ')
 
     return redirect('Allmodule',user.id)  
@@ -274,22 +225,24 @@ def staff_registraction(request):
     pas=request.POST['pass']
     ph=request.POST['ph']
     code=request.POST['code']
-    com=company.objects.get(Company_code=code)
+
+    if company.objects.filter(Company_code=code).exists():
+      com=company.objects.get(Company_code=code)
+    else:
+        messages.info(request, 'Sorry, Company code is Invalide')
+        return redirect('staff_register')
     img=request.FILES.get('image')
 
     if staff_details.objects.filter(user_name=un).exists():
       messages.info(request, 'Sorry, Username already exists')
-      print("1")
       return redirect('staff_register')
     elif staff_details.objects.filter(email=email).exists():
       messages.info(request, 'Sorry, Email already exists')
-      print("2")
       return redirect('staff_register')
     else:
       
       staff=staff_details(first_name=fn,last_name=ln,email=email,user_name=un,password=pas,contact=ph,img=img,company=com)
       staff.save()
-      print("success")
       return redirect('log_page')
 
   else:
@@ -297,14 +250,7 @@ def staff_registraction(request):
     return redirect('staff_register')
   
 
-def adminaccept(request,id):
-  data=company.objects.filter(id=id).update(superadmin_approval=1)
-  return redirect('client_request')
-def adminreject(request,id):
-  data=company.objects.get(id=id)
-  data.user.delete()
-  data.delete()
-  return redirect('client_request')
+
 
 
 
@@ -337,19 +283,7 @@ def client_details_overview(request,id):
   allmodules=modules_list.objects.get(company=id)
   return render(request,'admin/client_details_overview.html',{'company':com,'allmodules':allmodules})
 
-def staff_request(request):
-  com =  company.objects.get(user = request.user)
-  staff = staff_details.objects.filter(company=com,Action=0).order_by('-id')
-  allmodules= modules_list.objects.get(company=com.id,status='New')
-  return render(request,'company/staff_request.html',{'staff':staff,'company':com,'allmodules':allmodules}) 
- 
-def View_staff(request):
-  com =  company.objects.get(user = request.user)
-  staff = staff_details.objects.filter(company=com,Action=0)
-  allstaff = staff_details.objects.filter(company=com,Action=1).order_by('-id')
-  allmodules= modules_list.objects.get(company=com.id,status='New')
 
-  return render(request, 'company/view_staff.html',{'staff':staff,'company':com,'allstaff':allstaff,'allmodules':allmodules})
 
 def payment_term(request):
   terms = payment_terms.objects.all()
@@ -376,135 +310,16 @@ def add_payment_terms(request):
 
   return redirect('payment_term')
 
-def Allmodule(request,uid):
-  user=User.objects.get(id=uid)
-  return render(request,'company/modules.html',{'user':user})
-
-def addmodules(request,uid):
-  if request.method == 'POST':
-    com=company.objects.get(user=uid)
-    c1=request.POST.get('c1')
-    c2=request.POST.get('c2')
-    c3=request.POST.get('c3')
-    c4=request.POST.get('c4')
-    c5=request.POST.get('c5')
-    c6=request.POST.get('c6')
-    c7=request.POST.get('c7')
-    c8=request.POST.get('c8')
-    c9=request.POST.get('c9')
-    c10=request.POST.get('c10')
-    c11=request.POST.get('c11')
-    c12=request.POST.get('c12')
-    c13=request.POST.get('c13')
-    c14=request.POST.get('c14')
-    
-    data=modules_list(company=com,sales_invoice = c1,
-                      Estimate=c2,Payment_in=c3,sales_order=c4,
-                      Delivery_challan=c5,sales_return=c6,Purchase_bills=c7,
-                      Payment_out=c8,Purchase_order=c9,Purchase_return=c10,
-                      Bank_account=c11,Cash_in_hand=c12, cheques=c13,Loan_account=c14)
-    data.save()
-
-    return redirect('log_page')
-  
-
-
-def companyreport(request):
-  com =  company.objects.get(user = request.user)
-  allmodules= modules_list.objects.get(company=com.id,status='New')
-  return render(request,'company/companyreport.html',{'company':com,'allmodules':allmodules})  
-
-def Companyprofile(request):
-  com =  company.objects.get(user = request.user)
-  allmodules= modules_list.objects.get(company=com.id,status='New')
-  return render(request,'company/companyprofile.html',{'company':com,'allmodules':allmodules})
-
-def editcompanyprofile(request):
-  com =  company.objects.get(user = request.user)
-  allmodules= modules_list.objects.get(company=com.id,status='New')
-  terms=payment_terms.objects.all()
-  return render(request,'company/editcompanyprofile.html',{'company':com,'allmodules':allmodules,'terms':terms})
-
-def editcompanyprofile_action(request):
-  com =  company.objects.get(user = request.user)
-  if request.method == 'POST':
-    com.company_name = request.POST['cname']
-    com.user.email = request.POST['email']
-    com.contact = request.POST['ph']
-    com.address = request.POST['address']
-    com.city = request.POST['city']
-    com.state = request.POST['state']
-    com.country = request.POST['country']
-    com.pincode = request.POST['pincode']
-
-    t = request.POST['select']
-    terms = payment_terms.objects.get(id=t)
-    com.dateperiod = terms
-    com.start_date=date.today()
-    days=int(terms.days)
-
-    end= date.today() + timedelta(days=days)
-    com.End_date=end
-
-    old=com.profile_pic
-    new=request.FILES.get('image')
-    if old!=None and new==None:
-      com.profile_pic=old
-    else:
-      com.profile_pic=new
-    
-    com.save() 
-    com.user.save() 
-    return redirect('Companyprofile') 
 
 
 
-  return redirect('Companyprofile')
-
-def editmodule(request):
-  com =  company.objects.get(user = request.user)
-  allmodules= modules_list.objects.get(company=com.id,status='New')
-  return render(request,'company/editmodule.html',{'company':com,'allmodules':allmodules})
-
-def editmodule_action(request):
-  if request.method == 'POST':
-    com = company.objects.get(user = request.user)
-    # if modules_list.objects.filter(company=com.id,status='Old').exists():
-    #   old=modules_list.objects.filter(company=com.id,status='Old')
-    #   old.delete()
-
-    # old_data=modules_list.objects.get(company=com.id,status='New')  
-    # old_data.status='Old'
-    # old_data.save()
+ 
 
 
 
-    c1=request.POST.get('c1')
-    c2=request.POST.get('c2')
-    c3=request.POST.get('c3')
-    c4=request.POST.get('c4')
-    c5=request.POST.get('c5')
-    c6=request.POST.get('c6')
-    c7=request.POST.get('c7')
-    c8=request.POST.get('c8')
-    c9=request.POST.get('c9')
-    c10=request.POST.get('c10')
-    c11=request.POST.get('c11')
-    c12=request.POST.get('c12')
-    c13=request.POST.get('c13')
-    c14=request.POST.get('c14')
-    
-    data=modules_list(company=com,sales_invoice = c1,
-                      Estimate=c2,Payment_in=c3,sales_order=c4,
-                      Delivery_challan=c5,sales_return=c6,Purchase_bills=c7,
-                      Payment_out=c8,Purchase_order=c9,Purchase_return=c10,
-                      Bank_account=c11,Cash_in_hand=c12, cheques=c13,Loan_account=c14,status='Pending')
-    data.save()
-    data1=modules_list.objects.filter(company=com.id,status='Pending').update(update_action=1)
-    return redirect('Companyprofile')
-    
-    
-  return redirect('Companyprofile')
+
+
+
 
 def admin_notification(request):
   data= modules_list.objects.filter(update_action=1,status='Pending')
@@ -529,45 +344,7 @@ def module_updation_ok(request,mid):
   data1=modules_list.objects.filter(company=mid).update(update_action=0)
   return redirect('admin_notification')
 
-def staff_profile(request,sid):
-  staff =  staff_details.objects.get(id=sid)
-  allmodules= modules_list.objects.get(company=staff.company,status='New')
-  context = {
-              'staff' : staff,
-              'allmodules':allmodules
 
-          }
-  return render(request,'staff/staff_profile.html',context)
-
-def editstaff_profile(request,sid):
-  staff =  staff_details.objects.get(id=sid)
-  allmodules= modules_list.objects.get(company=staff.company,status='New')
-  context = {
-              'staff' : staff,
-              'allmodules':allmodules
-
-          }
-  return render(request,'staff/editstaff_profile.html',context)
-
-def editstaff_profile_action(request,sid):
-  if request.method == 'POST':
-    staff =  staff_details.objects.get(id=sid)
-    staff.first_name = request.POST['fname']
-    staff.last_name = request.POST['lname']
-    staff.user_name = request.POST['uname']
-    staff.email = request.POST['email']
-    staff.contact = request.POST['ph']
-    old=staff.img
-    new=request.FILES.get('image')
-    if old!=None and new==None:
-      staff.img=old
-    else:
-      staff.img=new
-
-    staff.save()  
-
-    return redirect ('staff_profile',staff.id)
-  return redirect ('staff_profile',staff.id)
 
 
 
@@ -632,59 +409,8 @@ def distributor_home(request):
 
   return render(request,'distributor/distributor_home.html',{'distributor':distributor})
 
-# ----athul ----10-11-2023---
-
-def log_page(request):
-  return render(request, 'log.html')
-  
-def login(request):
-  if request.method == 'POST':
-    user_name = request.POST['username']
-    passw = request.POST['password']
-    
-    log_user = auth.authenticate(username = user_name,
-                                  password = passw)
-    
-    if log_user is not None:
-      auth.login(request, log_user)
-      if request.user.is_staff==1:
-        return redirect('adminhome')
-      else:
-        if company.objects.filter(user=request.user).exists():
-          data=company.objects.get(user=request.user)
-          if data.superadmin_approval == 1 or data.Distributor_approval == 1:
-             return redirect('homepage')
-          else:
-            messages.info(request, 'Approval is Pending..')
-            return redirect('log_page')
-        if Distributors_details.objects.filter(user=request.user).exists():
-          data=Distributors_details.objects.get(user=request.user)
-          if data.Log_Action == 1:
-            return redirect('distributor_home')
-
-          else:
-            messages.info(request, 'Approval is Pending..')
-            return redirect('log_page')
 
 
-    elif staff_details.objects.filter(user_name=user_name,password=passw).exists(): 
-      data=staff_details.objects.get(user_name=user_name,password=passw)
-      if data.Action == 1:
-        request.session["staff_id"]=data.id
-        if 'staff_id' in request.session:
-          if request.session.has_key('emp_id'):
-            staff_id = request.session['staff_id']
-            print(staff_id)
- 
-          return redirect('staffhome')  
-      else:
-        messages.info(request, 'Approval is Pending..')
-        return redirect('log_page')
-    else:
-      messages.info(request, 'Invalid Username or Password. Try Again.')
-      return redirect('log_page')
-  else:  
-   return redirect('log_page')
       
 def clients(request):
   return render(request,'admin/clients.html')
@@ -1074,61 +800,13 @@ def add_parties(request):
   return render(request, 'company/add_parties.html')
 
 
-def save_parties(request):
-    if request.method == 'POST':
-        Company = company.objects.get(user=request.user)
-        user_id = request.user.id
-        
-        party_name = request.POST['partyname']
-        gst_no = request.POST['gstno']
-        contact = request.POST['contact']
-        gst_type = request.POST['gst']
-        state = request.POST['state']
-        address = request.POST['address']
-        email = request.POST['email']
-        openingbalance = request.POST.get('balance', '')
-        payment = request.POST.get('paymentType', '')
-        creditlimit = request.POST.get('creditlimit', '')
-        current_date = request.POST['currentdate']
-        End_date = request.POST.get('enddate', None)
-        additionalfield1 = request.POST['additionalfield1']
-        additionalfield2 = request.POST['additionalfield2']
-        additionalfield3 = request.POST['additionalfield3']
-        user=User.objects.get(id=user_id)
-        comp=Company
-        if (
-          not party_name
-          
-      ):
-          return render(request, 'add_parties.html')
-
-        part = party(party_name=party_name, gst_no=gst_no,contact=contact,gst_type=gst_type, state=state,address=address, email=email, openingbalance=openingbalance,payment=payment,
-                       creditlimit=creditlimit,current_date=current_date,End_date=End_date,additionalfield1=additionalfield1,additionalfield2=additionalfield2,additionalfield3=additionalfield3,user=user,company=comp)
-        part.save() 
-
-        if 'save_and_new' in request.POST:
-            
-            return render(request, 'company/add_parties.html')
-        else:
-          
-            return redirect('view_parties')
-
-    return render(request, 'company/add_parties.html')  
 
 
-def view_parties(request):
-  Company = company.objects.get(user=request.user.id)
-  user_id = request.user.id
-  Party=party.objects.filter(company=Company.id)
-  return render(request, 'company/view_parties.html',{'Company':Company,'user_id':user_id,'Party':Party})
 
 
-def view_party(request,id):
-  Company = company.objects.get(user=request.user)
-  user_id = request.user.id
-  getparty=party.objects.get(id=id)
-  Party=party.objects.filter(company=Company.id)
-  return render(request, 'company/view_party.html',{'Company':Company,'user_id':user_id,'Party':Party,'getparty':getparty})
+
+
+
 
 def edit_party(request,id):
   Company = company.objects.get(user=request.user)
@@ -2347,6 +2025,2668 @@ def bank_transaction_statement(request,bank_id):
                                                   "staff":staff})
 
 #******************************************   ASHIKH V U (end) ****************************************************
+
+
+def view_purchasebill(request):
+  sid = request.session.get('staff_id')
+  staff =  staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id)
+  allmodules= modules_list.objects.get(company=cmp,status='New')
+  pbill = PurchaseBill.objects.filter(company=cmp)
+
+  if not pbill:
+    context = {'staff':staff, 'allmodules':allmodules}
+    return render(request,'company/purchasebillempty.html',context)
+  
+  context = {'staff':staff,'allmodules':allmodules,'pbill':pbill}
+  return render(request,'company/purchasebilllist.html',context)
+
+
+def add_purchasebill(request):
+  toda = date.today()
+  tod = toda.strftime("%Y-%m-%d")
+  
+  sid = request.session.get('staff_id')
+  staff =  staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id)
+  cust = party.objects.filter(company=cmp,user=cmp.user)
+  bank = BankModel.objects.filter(company=cmp,user=cmp.user)
+  allmodules= modules_list.objects.get(company=staff.company,status='New')
+  last_bill = PurchaseBill.objects.filter(company=cmp).last()
+
+  if last_bill:
+    bill_no = last_bill.tot_bill_no + 1 
+  else:
+    bill_no = 1
+
+  item = ItemModel.objects.filter(company=cmp,user=cmp.user)
+  item_units = UnitModel.objects.filter(user=cmp.user,company=staff.company)
+
+  context = {'staff':staff, 'allmodules':allmodules, 'cust':cust, 'cmp':cmp,'bill_no':bill_no, 'tod':tod, 'item':item, 'item_units':item_units,'bank':bank}
+  return render(request,'company/purchasebilladd.html',context)
+
+
+def create_purchasebill(request):
+  if request.method == 'POST': 
+    sid = request.session.get('staff_id')
+    staff = staff_details.objects.get(id=sid)
+    cmp = company.objects.get(id=staff.company.id)    
+    part = party.objects.get(id=request.POST.get('customername'))
+    pbill = PurchaseBill(party=part, 
+                          billno=request.POST.get('bill_no'),
+                          billdate=request.POST.get('billdate'),
+                          supplyplace =request.POST.get('placosupply'),
+                          pay_method=request.POST.get("method"),
+                          cheque_no=request.POST.get("cheque_id"),
+                          upi_no=request.POST.get("upi_id"),
+                          advance = request.POST.get("advance"),
+                          balance = request.POST.get("balance"),
+                          subtotal=float(request.POST.get('subtotal')),
+                          igst = request.POST.get('igst'),
+                          cgst = request.POST.get('cgst'),
+                          sgst = request.POST.get('sgst'),
+                          adjust = request.POST.get("adj"),
+                          taxamount = request.POST.get("taxamount"),
+                          grandtotal=request.POST.get('grandtotal'),
+                          company=cmp,staff=staff)
+    pbill.save()
+        
+    product = tuple(request.POST.getlist("product[]"))
+    qty =  tuple(request.POST.getlist("qty[]"))
+    discount =  tuple(request.POST.getlist("discount[]"))
+    if request.POST.get('placosupply') =='State':
+      tax =  tuple(request.POST.getlist("tax1[]"))
+    else:
+      tax =  tuple(request.POST.getlist("tax2[]"))
+    total =  tuple(request.POST.getlist("total[]"))
+    billno = PurchaseBill.objects.get(billno =pbill.billno,company=cmp)
+
+    if len(product)==len(qty)==len(tax)==len(discount)==len(total):
+        mapped=zip(product,qty,tax,discount,total)
+        mapped=list(mapped)
+        for ele in mapped:
+          itm = ItemModel.objects.get(id=ele[0])
+          PurchaseBillItem.objects.create(product = itm,qty=ele[1], tax=ele[2],discount=ele[3],total=ele[4],purchasebill=billno,company=cmp)
+
+    PurchaseBill.objects.filter(company=cmp).update(tot_bill_no=F('tot_bill_no') + 1)
+    
+    pbill.tot_bill_no = pbill.billno
+    pbill.save()
+
+    PurchaseBillTransactionHistory.objects.create(purchasebill=pbill,company=cmp,staff=staff,action='Created')
+
+    if 'Next' in request.POST:
+      return redirect('add_purchasebill')
+    
+    if "Save" in request.POST:
+      return redirect('view_purchasebill')
+    
+  else:
+    return render(request,'staff/purchasebilladd.html')
+
+
+def edit_purchasebill(request,id):
+  toda = date.today()
+  tod = toda.strftime("%Y-%m-%d")
+  
+  sid = request.session.get('staff_id')
+  staff =  staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id)
+  cust = party.objects.filter(company=cmp,user=cmp.user)
+  item = ItemModel.objects.filter(company=cmp,user=cmp.user)
+  item_units = UnitModel.objects.filter(user=cmp.user,company=staff.company.id)
+  bank = BankModel.objects.filter(company=cmp,user=cmp.user)
+  allmodules= modules_list.objects.get(company=staff.company,status='New')
+  pbill = PurchaseBill.objects.get(id=id,company=cmp)
+  billprd = PurchaseBillItem.objects.filter(purchasebill=pbill,company=cmp)
+
+  if pbill.pay_method != 'Cash' and pbill.pay_method != 'Cheque' and pbill.pay_method != 'UPI':
+    bankno = BankModel.objects.get(id= pbill.pay_method,company=cmp,user=cmp.user)
+  else:
+    bankno = 0
+
+  bdate = pbill.billdate.strftime("%Y-%m-%d")
+  context = {'staff':staff, 'allmodules':allmodules, 'pbill':pbill, 'billprd':billprd,'tod':tod,
+             'cust':cust, 'item':item, 'item_units':item_units, 'bdate':bdate,'bank':bank, 'bankno':bankno}
+  return render(request,'company/purchasebilledit.html',context)
+
+
+def update_purchasebill(request,id):
+  if request.method =='POST':
+    sid = request.session.get('staff_id')
+    staff = staff_details.objects.get(id=sid)
+    cmp = company.objects.get(id=staff.company.id)  
+    part = party.objects.get(id=request.POST.get('customername'))
+    pbill = PurchaseBill.objects.get(id=id,company=cmp)
+    pbill.party = part
+    pbill.billdate = request.POST.get('billdate')
+    pbill.supplyplace  = request.POST.get('placosupply')
+    pbill.subtotal =float(request.POST.get('subtotal'))
+    pbill.grandtotal = request.POST.get('grandtotal')
+    pbill.igst = request.POST.get('igst')
+    pbill.cgst = request.POST.get('cgst')
+    pbill.sgst = request.POST.get('sgst')
+    pbill.taxamount = request.POST.get("taxamount")
+    pbill.adjust = request.POST.get("adj")
+    pbill.pay_method = request.POST.get("method")
+    pbill.cheque_no = request.POST.get("cheque_id")
+    pbill.upi_no = request.POST.get("upi_id")
+    pbill.advance = request.POST.get("advance")
+    pbill.balance = request.POST.get("balance")
+
+    pbill.save()
+
+    product = tuple(request.POST.getlist("product[]"))
+    qty = tuple(request.POST.getlist("qty[]"))
+    if request.POST.get('placosupply') == 'State':
+      tax =tuple( request.POST.getlist("tax1[]"))
+    else:
+      tax = tuple(request.POST.getlist("tax2[]"))
+    total = tuple(request.POST.getlist("total[]"))
+    discount = tuple(request.POST.getlist("discount[]"))
+
+    PurchaseBillItem.objects.filter(purchasebill=pbill,company=cmp).delete()
+    if len(total)==len(discount)==len(qty)==len(tax):
+      mapped=zip(product,qty,tax,discount,total)
+      mapped=list(mapped)
+      for ele in mapped:
+        itm = ItemModel.objects.get(id=ele[0])
+        PurchaseBillItem.objects.create(product =itm,qty=ele[1], tax=ele[2],discount=ele[3],total=ele[4],purchasebill=pbill,company=cmp)
+
+    PurchaseBillTransactionHistory.objects.create(purchasebill=pbill,company=cmp,staff=staff,action='Updated')
+    return redirect('view_purchasebill')
+
+  return redirect('view_purchasebill')
+
+
+def details_purchasebill(request,id):
+  sid = request.session.get('staff_id')
+  staff = staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id) 
+  allmodules = modules_list.objects.get(company=staff.company,status='New')
+  pbill = PurchaseBill.objects.get(id=id,company=cmp)
+  pitm = PurchaseBillItem.objects.filter(purchasebill=pbill,company=cmp)
+  dis = 0
+  for itm in pitm:
+    dis += int(itm.discount)
+  itm_len = len(pitm)
+
+  context={'staff':staff,'allmodules':allmodules,'pbill':pbill,'pitm':pitm,'itm_len':itm_len,'dis':dis}
+  return render(request,'company/purchasebilldetails.html',context)
+
+
+def history_purchasebill(request,id):
+  sid = request.session.get('staff_id')
+  staff = staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id)   
+  allmodules= modules_list.objects.get(company=staff.company,status='New')
+  pbill = PurchaseBill.objects.get(id=id,company=cmp)
+  hst= PurchaseBillTransactionHistory.objects.filter(purchasebill=pbill,company=cmp)
+
+  context = {'staff':staff,'allmodules':allmodules,'hst':hst,'pbill':pbill}
+  return render(request,'company/purchasebillhistory.html',context)
+
+
+def delete_purchasebill(request,id):
+  sid = request.session.get('staff_id')
+  staff = staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id) 
+  pbill = PurchaseBill.objects.get(id=id)
+  PurchaseBillItem.objects.filter(purchasebill=pbill,company=cmp).delete()
+  pbill.delete()
+  return redirect('view_purchasebill')
+
+
+def import_purchase_bill(request):
+  if request.method == 'POST' and request.FILES['billfile']  and request.FILES['prdfile']:
+    sid = request.session.get('staff_id')
+    staff =  staff_details.objects.get(id=sid)
+    cmp = company.objects.get(id=staff.company.id)
+    totval = int(PurchaseBill.objects.filter(company=cmp).last().tot_bill_no) + 1
+
+    excel_bill = request.FILES['billfile']
+    excel_b = load_workbook(excel_bill)
+    eb = excel_b['Sheet1']
+    excel_prd = request.FILES['prdfile']
+    excel_p = load_workbook(excel_prd)
+    ep = excel_p['Sheet1']
+
+    for row_number1 in range(2, eb.max_row + 1):
+      billsheet = [eb.cell(row=row_number1, column=col_num).value for col_num in range(1, eb.max_column + 1)]
+      part = party.objects.get(party_name=billsheet[0],email=billsheet[1],company=cmp)
+      PurchaseBill.objects.create(party=part,billno=totval,
+                                  billdate=billsheet[2],
+                                  supplyplace =billsheet[3],
+                                  tot_bill_no = totval,
+                                  company=cmp,staff=staff)
+      
+      pbill = PurchaseBill.objects.last()
+      if billsheet[4] == 'Cheque':
+        pbill.pay_method = 'Cheque'
+        pbill.cheque_no = billsheet[5]
+      elif billsheet[4] == 'UPI':
+        pbill.pay_method = 'UPI'
+        pbill.upi_no = billsheet[5]
+      else:
+        if billsheet[4] != 'Cash':
+          bank = BankModel.objects.get(bank_name=billsheet[4],company=cmp)
+          pbill.pay_method = bank
+        else:
+          pbill.pay_method = 'Cash'
+      pbill.save()
+
+      PurchaseBill.objects.filter(company=cmp).update(tot_bill_no=totval)
+      totval += 1
+      subtotal = 0
+      taxamount=0
+      for row_number2 in range(2, ep.max_row + 1):
+        prdsheet = [ep.cell(row=row_number2, column=col_num).value for col_num in range(1, ep.max_column + 1)]
+        if prdsheet[0] == row_number1:
+          itm = ItemModel.objects.get(item_name=prdsheet[1],item_hsn=prdsheet[2])
+          total=int(prdsheet[3])*int(itm.item_purchase_price) - int(prdsheet[5])
+          PurchaseBillItem.objects.create(purchasebill=pbill,
+                                company=cmp,
+                                product=itm,
+                                qty=prdsheet[3],
+                                tax=prdsheet[4],
+                                discount=prdsheet[5],
+                                total=total)
+
+          temp = prdsheet[4].split('[')
+          if billsheet[3] =='State':
+            tax=int(temp[0][3:])
+          else:
+            tax=int(temp[0][4:])
+
+          subtotal += total
+          tamount = total *(tax / 100)
+          taxamount += tamount
+                
+      if billsheet[3]=='State':
+        gst = round((taxamount/2),2)
+        pbill.sgst=gst
+        pbill.cgst=gst
+        pbill.igst=0
+
+      else:
+        gst=round(taxamount,2)
+        pbill.igst=gst
+        pbill.cgst=0
+        pbill.sgst=0
+
+      gtotal = subtotal + taxamount + float(billsheet[6])
+      balance = gtotal- float(billsheet[7])
+      gtotal = round(gtotal,2)
+      balance = round(balance,2)
+
+      pbill.subtotal=round(subtotal,2)
+      pbill.taxamount=round(taxamount,2)
+      pbill.adjust=round(billsheet[6],2)
+      pbill.grandtotal=gtotal
+      pbill.advance=round(billsheet[7],2)
+      pbill.balance=balance
+      pbill.save()
+
+      PurchaseBillTransactionHistory.objects.create(purchasebill=pbill,staff=pbill.staff,company=pbill.company,action='Created')
+      return JsonResponse({'message': 'File uploaded successfully!'})
+  else:
+    return JsonResponse({'message': 'File upload Failed!'})
+
+
+def billhistory(request):
+  pid = request.POST['id']
+  sid = request.session.get('staff_id')
+  staff = staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id) 
+  pbill = PurchaseBill.objects.get(billno=pid,company=cmp)
+  hst = PurchaseBillTransactionHistory.objects.filter(purchasebill=pbill,company=cmp).last()
+  name = hst.staff.first_name + ' ' + hst.staff.last_name 
+  action = hst.action
+  return JsonResponse({'name':name,'action':action,'pid':pid})
+
+
+def bankdata(request):
+  bid = request.POST['id']
+  bank = BankModel.objects.get(id=bid) 
+  bank_no = bank.account_num
+  bank_name = bank.bank_name
+  return JsonResponse({'bank_no':bank_no,'bank_name':bank_name})
+
+
+def savecustomer(request):
+  sid = request.session.get('staff_id')
+  staff =  staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id)
+
+  party_name = request.POST['name']
+  email = request.POST['email']
+  contact = request.POST['mobile']
+  state = request.POST['splystate']
+  address = request.POST['baddress']
+  gst_type = request.POST['gsttype']
+  gst_no = request.POST['gstin']
+  current_date = request.POST['partydate']
+  openingbalance = request.POST.get('openbalance')
+  payment = request.POST.get('paytype')
+  creditlimit = request.POST.get('credit_limit')
+  End_date = request.POST.get('enddate', None)
+  additionalfield1 = request.POST['add1']
+  additionalfield2 = request.POST['add2']
+  additionalfield3 = request.POST['add3']
+
+  part = party(party_name=party_name, gst_no=gst_no,contact=contact,gst_type=gst_type, state=state,address=address, email=email, openingbalance=openingbalance,
+                payment=payment,creditlimit=creditlimit,current_date=current_date,End_date=End_date,additionalfield1=additionalfield1,additionalfield2=additionalfield2,
+                additionalfield3=additionalfield3,company=cmp,user=cmp.user)
+  part.save() 
+  return JsonResponse({'success': True})
+
+
+def cust_dropdown(request):
+  sid = request.session.get('staff_id')
+  staff =  staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id)
+  part = party.objects.filter(company=cmp,user=cmp.user)
+
+  id_list = []
+  party_list = []
+  for p in part:
+    id_list.append(p.id)
+    party_list.append(p.party_name)
+
+  return JsonResponse({'id_list':id_list, 'party_list':party_list })
+
+
+def saveitem(request):
+  sid = request.session.get('staff_id')
+  staff =  staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id)
+
+  name = request.POST['name']
+  unit = request.POST['unit']
+  hsn = request.POST['hsn']
+  taxref = request.POST['taxref']
+  sell_price = request.POST['sell_price']
+  cost_price = request.POST['cost_price']
+  intra_st = request.POST['intra_st']
+  inter_st = request.POST['inter_st']
+
+  if taxref != 'Taxable':
+    intra_st = 'GST0[0%]'
+    inter_st = 'IGST0[0%]'
+
+  itmdate = request.POST.get('itmdate')
+  stock = request.POST.get('stock')
+  itmprice = request.POST.get('itmprice')
+  minstock = request.POST.get('minstock')
+
+  if not hsn:
+    hsn = None
+
+  itm = ItemModel(item_name=name, item_hsn=hsn,item_unit=unit,item_taxable=taxref, item_gst=intra_st,item_igst=inter_st, item_sale_price=sell_price, 
+                item_purchase_price=cost_price,item_opening_stock=stock,item_current_stock=stock,item_at_price=itmprice,item_date=itmdate,
+                item_min_stock_maintain=minstock,company=cmp,user=cmp.user)
+  itm.save() 
+  return JsonResponse({'success': True})
+
+
+def item_dropdown(request):
+  sid = request.session.get('staff_id')
+  staff =  staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id)
+
+  options = {}
+  option_objects = ItemModel.objects.filter(company=cmp,user=cmp.user)
+  for option in option_objects:
+      options[option.id] = [option.item_name]
+  return JsonResponse(options)
+
+
+def custdata(request):
+  cid = request.POST['id']
+  part = party.objects.get(id=cid)
+  phno = part.contact
+  address = part.address
+  pay = part.payment
+  bal = part.openingbalance
+  return JsonResponse({'phno':phno, 'address':address, 'pay':pay, 'bal':bal})
+
+
+def itemdetails(request):
+  itmid = request.GET['id']
+  itm = ItemModel.objects.get(id=itmid)
+  hsn = itm.item_hsn
+  gst = itm.item_gst
+  igst = itm.item_igst
+  price = itm.item_purchase_price
+  qty = itm.item_current_stock
+  return JsonResponse({'hsn':hsn, 'gst':gst, 'igst':igst, 'price':price, 'qty':qty})
+
+def add_purchaseorder(request):
+  sid = request.session.get('staff_id')
+  staff =  staff_details.objects.get(id=sid)
+  allmodules= modules_list.objects.get(company=staff.company,status='New')
+  pbill = PurchaseBill.objects.filter(company=staff.company)
+  context = {'staff':staff, 'allmodules':allmodules}
+  return render(request,'company/purchasebillempty.html',context)
+  
+  
+def view_purchaseorder(request):
+   sid = request.session.get('staff_id')
+   staff =  staff_details.objects.get(id=sid)
+   allmodules= modules_list.objects.get(company=staff.company,status='New')
+   context = {'staff':staff, 'allmodules':allmodules}
+   return render(request,'company/purchasebillempty.html',context)
+
+# ===========  estimate & delivery challan ===========shemeem==================   
+   
+def delivery_challan(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    allmodules= modules_list.objects.get(company=com.id,status='New')
+    all_challan = DeliveryChallan.objects.filter(company = com)
+    challan = []
+    for dc in all_challan:
+      history = DeliveryChallanTransactionHistory.objects.filter(company = com, challan = dc).last()
+      dict = {'challan':dc,'history':history}
+      challan.append(dict)
+    context = {
+      'staff':staff, 'company':com,'allmodules':allmodules, 'challan':challan,
+    }
+    return render(request, 'staff/delivery_challan.html',context)
+    
+
+def create_estimate(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      allmodules= modules_list.objects.get(company=com.id,status='New')
+      parties = party.objects.filter(company = com)
+      items = ItemModel.objects.filter(company = com)
+      item_units = UnitModel.objects.filter(company=com)
+
+      # Fetching last bill and assigning upcoming bill no as current + 1
+      # Also check for if any bill is deleted and bill no is continuos w r t the deleted bill
+      latest_bill = Estimate.objects.filter(company = com).order_by('-id').first()
+
+      if latest_bill:
+          last_number = int(latest_bill.ref_no)
+          new_number = last_number + 1
+      else:
+          new_number = 1
+
+      if DeletedEstimate.objects.filter(company = com).exists():
+          deleted = DeletedEstimate.objects.get(company = com)
+          
+          if deleted:
+              while int(deleted.ref_no) >= new_number:
+                  new_number+=1
+
+      
+      context = {
+        'staff':staff, 'company':com,'allmodules':allmodules, 'parties':parties, 'ref_no':new_number,'items':items,'item_units':item_units,
+      }
+      return render(request, 'staff/create_estimate.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(estimate_quotation)
+
+
+def getPartyDetails(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)  
+    party_id = request.POST.get('id')
+    party_details = party.objects.get(id = party_id)
+
+    list = []
+    dict = {
+      'contact': party_details.contact,
+      'address':party_details.address,
+      'state': party_details.state,
+      'balance':party_details.openingbalance,
+      'payment':party_details.payment,
+    }
+    list.append(dict)
+    return JsonResponse(json.dumps(list), content_type="application/json", safe=False)
+    
+
+def getItemData(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)  
+    try:
+        id = request.GET.get('id')
+
+        # item = ItemModel.objects.get(item_name = id, company = com)
+        item = ItemModel.objects.filter(item_name = id, company = com).first()
+        hsn = item.item_hsn
+        pur_rate = item.item_purchase_price
+        sale_rate = item.item_sale_price
+        tax = True if item.item_taxable == "Taxable" else False
+        gst = item.item_gst
+        igst = item.item_igst
+
+        return JsonResponse({"status":True,'id':item.id,'hsn':hsn,'pur_rate':pur_rate,'sale_rate':sale_rate, 'tax':tax, 'gst':gst, 'igst':igst})
+    except Exception as e:
+        print(e)
+        return JsonResponse({"status":False})
+  
+
+def createNewEstimate(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+        if request.method == 'POST':
+            estimate = Estimate(
+              staff = staff,
+              company = com,
+              date = request.POST['date'],
+              ref_no = request.POST['ref_no'],
+              party_name = party.objects.get(id = request.POST['party_name']).party_name,
+              contact = request.POST['contact'],
+              billing_address = request.POST['address'],
+              state_of_supply = 'State' if request.POST['state_supply'] == 'state' else 'Other State',
+              description = request.POST['description'],
+              subtotal = request.POST['subtotal'],
+              cgst = request.POST['cgst_tax'],
+              sgst = request.POST['sgst_tax'],
+              igst = request.POST['igst_tax'],
+              tax_amount = request.POST['tax_amount'],
+              adjustment = request.POST['adjustment'],
+              total_amount = request.POST['grand_total'],
+              balance = 0,
+              status = 'Open',
+              is_converted = False
+            )
+            estimate.save()
+            
+            ids = request.POST.getlist('estItems[]')
+            item = request.POST.getlist("item[]")
+            hsn  = request.POST.getlist("hsn[]")
+            qty = request.POST.getlist("qty[]")
+            price = request.POST.getlist("price[]")
+            tax = request.POST.getlist("taxgst[]") if request.POST['state_supply'] == 'state' else request.POST.getlist("taxigst[]")
+            discount = request.POST.getlist("discount[]")
+            total = request.POST.getlist("total[]")
+
+            est_id = Estimate.objects.get( id = estimate.id)
+
+            if len(ids)==len(item)==len(hsn)==len(qty)==len(price)==len(tax)==len(discount)==len(total) and ids and item and hsn and qty and price and tax and discount and total:
+                mapped = zip(ids,item,hsn,qty,price,tax,discount,total)
+                mapped = list(mapped)
+                for ele in mapped:
+                  estItems = Estimate_items.objects.create(staff = staff, eid = est_id, company = com, item = ItemModel.objects.get(company = com, id = ele[0]),name = ele[1],hsn=ele[2],quantity=ele[3],price=ele[4],tax=ele[5],discount = ele[6],total=ele[7])
+            
+            # Transaction history
+
+            history = EstimateTransactionHistory(
+              staff = staff,
+              estimate = estimate,
+              company = com,
+              action = "Create"
+            )
+            history.save()
+
+            if 'save_and_next' in request.POST:
+                return redirect(create_estimate)
+            return redirect(estimate_quotation)
+    except Exception as e:
+        print(e)
+        return redirect(create_estimate)
+  return redirect('/')
+
+
+def getPartyList(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+
+    options = {}
+    option_objects = party.objects.filter(company = com)
+    for option in option_objects:
+        options[option.id] = [option.id , option.party_name]
+
+    return JsonResponse(options)
+
+
+def getItemList(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+
+    options = {}
+    option_objects = ItemModel.objects.filter(company = com)
+    for option in option_objects:
+        options[option.id] = [option.item_name]
+
+    return JsonResponse(options)
+  
+
+def estimateFilterWithDate(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      date = request.GET['date_filter_value']
+      allmodules= modules_list.objects.get(company=com.id,status='New')
+      all_estimates = Estimate.objects.filter(company = com, date = date)
+      estimates = []
+      for est in all_estimates:
+        history = EstimateTransactionHistory.objects.filter(company = com, estimate = est).last()
+        dict = {'estimate':est,'history':history}
+        estimates.append(dict)      
+      
+      if not all_estimates:
+        messages.warning(request, f'No Estimates found on {date}.!')
+        # estimates = Estimate.objects.filter(company = com)
+        return redirect(estimate_quotation)
+      
+      context = {
+        'staff':staff,'company':com,'allmodules':allmodules, 'estimates':estimates,
+      }
+      return render(request, 'staff/estimate_quotation.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(estimate_quotation)
+    
+
+def estimateFilterWithRef(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      ref = request.GET['ref_filter_value']
+      allmodules= modules_list.objects.get(company=com.id,status='New')
+      all_estimates = Estimate.objects.filter(company = com, ref_no = ref)
+      estimates = []
+      for est in all_estimates:
+        history = EstimateTransactionHistory.objects.filter(company = com, estimate = est).last()
+        dict = {'estimate':est,'history':history}
+        estimates.append(dict)
+
+      if not all_estimates:
+        messages.warning(request, f'No Estimates found with Ref No. {ref}.!')
+        # estimates = Estimate.objects.filter(company = com)
+        return redirect(estimate_quotation)
+      
+      context = {
+        'staff':staff,'company':com,'allmodules':allmodules, 'estimates':estimates,
+      }
+      return render(request, 'staff/estimate_quotation.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(estimate_quotation)
+
+
+def estimateFilterWithBal(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      bal = request.GET['bal_filter_value']
+      allmodules= modules_list.objects.get(company=com.id,status='New')
+      all_estimates = Estimate.objects.filter(company = com, balance = bal)
+      estimates = []
+      for est in all_estimates:
+        history = EstimateTransactionHistory.objects.filter(company = com, estimate = est).last()
+        dict = {'estimate':est,'history':history}
+        estimates.append(dict)
+
+      if not all_estimates:
+        messages.warning(request, f'No Estimates found with Balance amount {bal}.!')
+        # estimates = Estimate.objects.filter(company = com)
+        return redirect(estimate_quotation)
+      
+      context = {
+        'staff':staff,'company':com,'allmodules':allmodules, 'estimates':estimates,
+      }
+      return render(request, 'staff/estimate_quotation.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(estimate_quotation)
+
+
+def estimateFilterWithName(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      name = request.GET['name_filter_value']
+      allmodules= modules_list.objects.get(company=com.id,status='New')
+      all_estimates = Estimate.objects.filter(company = com, party_name = name)
+      estimates = []
+      for est in all_estimates:
+        history = EstimateTransactionHistory.objects.filter(company = com, estimate = est).last()
+        dict = {'estimate':est,'history':history}
+        estimates.append(dict)      
+
+      if not all_estimates:
+        messages.warning(request, f'No Estimates found with Party Name {name}.!')
+        # estimates = Estimate.objects.filter(company = com)
+        return redirect(estimate_quotation)
+      
+      context = {
+        'staff':staff,'company':com,'allmodules':allmodules, 'estimates':estimates,
+      }
+      return render(request, 'staff/estimate_quotation.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(estimate_quotation)
+
+
+def estimateFilterWithTotal(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      tot = request.GET['total_filter_value']
+      allmodules= modules_list.objects.get(company=com.id,status='New')
+      all_estimates = Estimate.objects.filter(company = com, total_amount = tot)
+      estimates = []
+      for est in all_estimates:
+        history = EstimateTransactionHistory.objects.filter(company = com, estimate = est).last()
+        dict = {'estimate':est,'history':history}
+        estimates.append(dict)
+
+      if not all_estimates:
+        messages.warning(request, f'No Estimates found with Total Amount {tot}.!')
+        # estimates = Estimate.objects.filter(company = com)
+        return redirect(estimate_quotation)
+
+      context = {
+        'staff':staff,'company':com,'allmodules':allmodules, 'estimates':estimates,
+      }
+      return render(request, 'staff/estimate_quotation.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(estimate_quotation)
+    
+  
+def estimateFilterWithStat(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      stat = request.GET['status']
+      allmodules= modules_list.objects.get(company=com.id,status='New')
+      all_estimates = Estimate.objects.filter(company = com, status = stat)
+      estimates = []
+      for est in all_estimates:
+        history = EstimateTransactionHistory.objects.filter(company = com, estimate = est).last()
+        dict = {'estimate':est,'history':history}
+        estimates.append(dict)
+
+      if not all_estimates:
+        messages.warning(request, f'No Estimates found with Status {stat}.!')
+        # estimates = Estimate.objects.filter(company = com)
+        return redirect(estimate_quotation)
+      
+      context = {
+        'staff':staff,'company':com,'allmodules':allmodules, 'estimates':estimates,
+      }
+      return render(request, 'staff/estimate_quotation.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(estimate_quotation)
+   
+
+
+def estimateInBetween(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      fromDate = request.GET['from_date']
+      toDate = request.GET['to_date']
+      allmodules= modules_list.objects.get(company=com.id,status='New')
+      all_estimates = Estimate.objects.filter(company = com).filter(date__gte = fromDate, date__lte = toDate)
+      estimates = []
+      for est in all_estimates:
+        history = EstimateTransactionHistory.objects.filter(company = com, estimate = est).last()
+        dict = {'estimate':est,'history':history}
+        estimates.append(dict)
+      
+      if not all_estimates:
+        messages.warning(request, f'No Estimates found in between {fromDate} to {toDate}.!')
+        # estimates = Estimate.objects.filter(company = com)
+        return redirect(estimate_quotation)      
+      
+      context = {
+        'staff':staff,'company':com,'allmodules':allmodules, 'estimates':estimates,
+      }
+      return render(request, 'staff/estimate_quotation.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(estimate_quotation)
+
+
+def deleteEstimate(request,id):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      est = Estimate.objects.get(company = com, id = id)
+
+      # Storing ref number to deleted table
+      # if entry exists and lesser than the current, update and save => Only one entry per company
+
+      if DeletedEstimate.objects.filter(company = com).exists():
+          deleted = DeletedEstimate.objects.get(company = com)
+          if deleted:
+              if int(est.ref_no) > int(deleted.ref_no):
+                  deleted.ref_no = est.ref_no
+                  deleted.save()
+          
+      else:
+          deleted = DeletedEstimate(company = com, staff = staff, ref_no = est.ref_no)
+          deleted.save()
+      
+      Estimate_items.objects.filter(company = com , eid = est).delete()
+      est.delete()
+      messages.success(request, 'Estimate deleted successfully.!')
+      return redirect(estimate_quotation)
+    except Exception as e:
+      print(e)
+      return redirect(estimate_quotation)
+  return redirect('/')
+
+
+def editEstimate(request, id):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      est = Estimate.objects.get(company = com , id = id)
+      est_items = Estimate_items.objects.filter(company = com , eid = est)
+      allmodules= modules_list.objects.get(company=com.id,status='New')
+      parties = party.objects.filter(company = com)
+      items = ItemModel.objects.filter(company = com)
+      item_units = UnitModel.objects.filter(company=com)
+      context = {
+        'staff':staff,'company':com,'allmodules':allmodules, 'parties':parties,'items':items,'item_units':item_units, 'estimate':est, 'estItems':est_items,
+      }
+      return render(request, 'staff/edit_estimate.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(estimate_quotation)
+    
+
+def updateEstimate(request, id):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      estimate = Estimate.objects.get(company = com, id = id)
+      if request.method == 'POST':
+        estimate.date = request.POST['date']
+        estimate.ref_no = request.POST['ref_no']
+        estimate.party_name = party.objects.get(id = request.POST['party_name']).party_name
+        estimate.contact = request.POST['contact']
+        estimate.billing_address = request.POST['address']
+        estimate.state_of_supply = 'State' if request.POST['state_supply'] == 'state' else 'Other State'
+        estimate.description = request.POST['description']
+        estimate.subtotal = request.POST['subtotal']
+        estimate.cgst = request.POST['cgst_tax']
+        estimate.sgst = request.POST['sgst_tax']
+        estimate.igst = request.POST['igst_tax']
+        estimate.tax_amount = request.POST['tax_amount']
+        estimate.adjustment = request.POST['adjustment']
+        estimate.total_amount = request.POST['grand_total']
+        estimate.balance = 0
+        estimate.status = 'Open'
+        estimate.is_converted = False
+
+        estimate.save()
+
+        ids = request.POST.getlist('estItems[]')
+        item = request.POST.getlist("item[]")
+        hsn  = request.POST.getlist("hsn[]")
+        qty = request.POST.getlist("qty[]")
+        price = request.POST.getlist("price[]")
+        tax = request.POST.getlist("taxgst[]") if request.POST['state_supply'] == 'state' else request.POST.getlist("taxigst[]")
+        discount = request.POST.getlist("discount[]")
+        total = request.POST.getlist("total[]")
+        est_item_ids = request.POST.getlist("id[]")
+        
+        item_ids = [int(id) for id in est_item_ids]
+
+        
+        est_item = Estimate_items.objects.filter(eid = estimate)
+        object_ids = [obj.id for obj in est_item]
+
+        ids_to_delete = [obj_id for obj_id in object_ids if obj_id not in item_ids]
+
+        Estimate_items.objects.filter(id__in=ids_to_delete).delete()
+        
+        count = Estimate_items.objects.filter(eid = estimate, company = com).count()
+        if len(ids)==len(item)==len(hsn)==len(qty)==len(price)==len(tax)==len(discount)==len(total):
+            try:
+                mapped=zip(ids,item,hsn,qty,price,tax,total,discount,item_ids)
+                mapped=list(mapped)
+                
+                for ele in mapped:
+                    if int(len(item))>int(count):
+                        if ele[8] == 0:
+                            itemAdd= Estimate_items.objects.create(name = ele[1], hsn=ele[2],quantity=ele[3],price=ele[4],tax=ele[5],total=ele[6],discount=ele[7] ,staff = staff ,eid = estimate ,company = com, item = ItemModel.objects.get(company = com, id = ele[0]))
+                        else:
+                            itemAdd = Estimate_items.objects.filter( id = ele[8],company = com).update(name = ele[1],hsn=ele[2],quantity=ele[3],price=ele[4],tax=ele[5],total=ele[6],discount=ele[7], item = ItemModel.objects.get(company = com, id = ele[0]))
+                    else:
+                        itemAdd = Estimate_items.objects.filter( id = ele[8],company=com).update(name = ele[1],hsn=ele[2],quantity=ele[3],price=ele[4],tax=ele[5],total=ele[6],discount=ele[7], item = ItemModel.objects.get(company = com, id = ele[0]))
+            except Exception as e:
+                    print(e)
+                    mapped=zip(ids,item,hsn,qty,price,tax,total,discount,item_ids)
+                    mapped=list(mapped)
+                    
+                    for ele in mapped:
+                        created =Estimate_items.objects.filter(id=ele[8] ,company=com).update(name = ele[1],hsn=ele[2],quantity=ele[3],price=ele[4],tax=ele[5],total=ele[6],discount=ele[7], item = ItemModel.objects.get(company = com, id = ele[0]))
+        
+        history = EstimateTransactionHistory(
+          staff = staff,
+          estimate = estimate,
+          company = com,
+          action = "Edit"
+        )
+        history.save()
+
+        return redirect(viewEstimate,id)
+    except Exception as e:
+      print(e)
+      return redirect(editEstimate, id)
+    
+
+def estimateTransactionHistory(request,id):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    allmodules= modules_list.objects.get(company=com.id,status='New')
+    try:
+      est = Estimate.objects.get(company = com, id = id)
+      history = EstimateTransactionHistory.objects.filter(company = com, estimate = est)
+      context = {
+        'staff':staff, 'company':com,'allmodules':allmodules,'history':history,
+      }
+      return render(request, 'staff/estimate_transaction_history.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(estimate_quotation)
+    
+
+# DELIVERY CHALLAN
+
+def createDeliveryChallan(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      allmodules= modules_list.objects.get(company=com.id,status='New')
+      parties = party.objects.filter(company = com)
+      items = ItemModel.objects.filter(company = com)
+      item_units = UnitModel.objects.filter(company=com)
+
+      # Fetching last bill and assigning upcoming bill no as current + 1
+      # Also check for if any bill is deleted and bill no is continuos w r t the deleted bill
+      latest_bill = DeliveryChallan.objects.filter(company = com).order_by('-id').first()
+
+      if latest_bill:
+          last_number = int(latest_bill.challan_no)
+          new_number = last_number + 1
+      else:
+          new_number = 1
+
+      if DeletedDeliveryChallan.objects.filter(company = com).exists():
+          deleted = DeletedDeliveryChallan.objects.get(company = com)
+          
+          if deleted:
+              while int(deleted.challan_no) >= new_number:
+                  new_number+=1
+
+      
+      context = {
+        'staff':staff,'company':com,'allmodules':allmodules, 'parties':parties, 'challan_no':new_number,'items':items,'item_units':item_units,
+      }
+      return render(request, 'staff/create_delivery_challan.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(delivery_challan)
+
+
+def createNewDeliveryChallan(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+        if request.method == 'POST':
+            challan = DeliveryChallan(
+              company = com,
+              staff = staff,
+              date = request.POST['date'],
+              due_date = request.POST['due_date'],
+              challan_no = request.POST['challan_no'],
+              party_name = party.objects.get(id = request.POST['party_name']).party_name,
+              contact = request.POST['contact'],
+              billing_address = request.POST['address'],
+              state_of_supply = 'State' if request.POST['state_supply'] == 'state' else 'Other State',
+              description = request.POST['description'],
+              subtotal = request.POST['subtotal'],
+              cgst = request.POST['cgst_tax'],
+              sgst = request.POST['sgst_tax'],
+              igst = request.POST['igst_tax'],
+              tax_amount = request.POST['tax_amount'],
+              adjustment = request.POST['adjustment'],
+              total_amount = request.POST['grand_total'],
+              balance = 0,
+              status = 'Open',
+              is_converted = False
+            )
+            challan.save()
+            
+            ids = request.POST.getlist('dcItems[]')
+            item = request.POST.getlist("item[]")
+            hsn  = request.POST.getlist("hsn[]")
+            qty = request.POST.getlist("qty[]")
+            price = request.POST.getlist("price[]")
+            tax = request.POST.getlist("taxgst[]") if request.POST['state_supply'] == 'state' else request.POST.getlist("taxigst[]")
+            discount = request.POST.getlist("discount[]")
+            total = request.POST.getlist("total[]")
+
+            chl_id = DeliveryChallan.objects.get( id = challan.id)
+
+            if len(ids)==len(item)==len(hsn)==len(qty)==len(price)==len(tax)==len(discount)==len(total) and ids and item and hsn and qty and price and tax and discount and total:
+                mapped = zip(ids,item,hsn,qty,price,tax,discount,total)
+                mapped = list(mapped)
+                for ele in mapped:
+                  dcItems = DeliveryChallanItems.objects.create(staff = staff,cid = chl_id, company = com, item = ItemModel.objects.get(company = com, id = ele[0]),name = ele[1],hsn=ele[2],quantity=ele[3],price=ele[4],tax=ele[5],discount = ele[6],total=ele[7])
+            
+            history = DeliveryChallanTransactionHistory(
+              staff = staff,
+              challan = challan,
+              company = com,
+              action = "Create"
+            )
+            history.save()
+
+            if 'save_and_next' in request.POST:
+                return redirect(createDeliveryChallan)
+            return redirect(delivery_challan)
+    except Exception as e:
+        print(e)
+        return redirect(createDeliveryChallan)
+  return redirect('/')
+
+
+def challanInBetween(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      fromDate = request.GET['from_date']
+      toDate = request.GET['to_date']
+      allmodules= modules_list.objects.get(company=com.id,status='New')
+      all_challan = DeliveryChallan.objects.filter(company = com).filter(date__gte = fromDate, date__lte = toDate)
+      challan = []
+      for dc in all_challan:
+        history = DeliveryChallanTransactionHistory.objects.filter(company = com, challan = dc).last()
+        dict = {'challan':dc,'history':history}
+        challan.append(dict)
+      if not all_challan:
+        messages.warning(request, f'No Challans found in between {fromDate} to {toDate}.!')
+        # challan = DeliveryChallan.objects.filter(company = com)
+        return redirect(delivery_challan)
+      
+      context = {
+        'staff':staff,'company':com,'allmodules':allmodules, 'challan':challan,
+      }
+      return render(request, 'staff/delivery_challan.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(delivery_challan)
+
+
+def challanFilterWithDate(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      date = request.GET['date_filter_value']
+      allmodules= modules_list.objects.get(company=com.id,status='New')
+      all_challan = DeliveryChallan.objects.filter(company = com, date = date)
+      challan = []
+      for dc in all_challan:
+        history = DeliveryChallanTransactionHistory.objects.filter(company = com, challan = dc).last()
+        dict = {'challan':dc,'history':history}
+        challan.append(dict)
+      if not all_challan:
+        messages.warning(request, f'No Challans found on {date}.!')
+        # challan = DeliveryChallan.objects.filter(company = com)
+        return redirect(delivery_challan)
+      
+      context = {
+        'staff':staff,'company':com,'allmodules':allmodules, 'challan':challan,
+      }
+      return render(request, 'staff/delivery_challan.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(delivery_challan)
+    
+
+def challanFilterWithDueDate(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      date = request.GET['due_date_filter_value']
+      allmodules= modules_list.objects.get(company=com.id,status='New')
+      all_challan = DeliveryChallan.objects.filter(company = com, due_date = date)
+      challan = []
+      for dc in all_challan:
+        history = DeliveryChallanTransactionHistory.objects.filter(company = com, challan = dc).last()
+        dict = {'challan':dc,'history':history}
+        challan.append(dict)
+
+      if not all_challan:
+        messages.warning(request, f'No Challans found with Due Date {date}.!')
+        # challan = DeliveryChallan.objects.filter(company = com)
+        return redirect(delivery_challan)
+      
+      context = {
+        'staff':staff,'company':com,'allmodules':allmodules, 'challan':challan,
+      }
+      return render(request, 'staff/delivery_challan.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(delivery_challan)
+    
+
+def challanFilterWithChallanNo(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      chl = request.GET['challan_no_filter_value']
+      allmodules= modules_list.objects.get(company=com.id,status='New')
+      all_challan = DeliveryChallan.objects.filter(company = com, challan_no = chl)
+      challan = []
+      for dc in all_challan:
+        history = DeliveryChallanTransactionHistory.objects.filter(company = com, challan = dc).last()
+        dict = {'challan':dc,'history':history}
+        challan.append(dict)
+
+      if not all_challan:
+        messages.warning(request, f'No Challans found with Challan No. {chl}.!')
+        # challan = DeliveryChallan.objects.filter(company = com)
+        return redirect(delivery_challan)
+      
+      context = {
+        'staff':staff,'company':com,'allmodules':allmodules, 'challan':challan,
+      }
+      return render(request, 'staff/delivery_challan.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(delivery_challan)
+
+
+def challanFilterWithBal(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      bal = request.GET['bal_filter_value']
+      allmodules= modules_list.objects.get(company=com.id,status='New')
+      all_challan = DeliveryChallan.objects.filter(company = com, balance = bal)
+      challan = []
+      for dc in all_challan:
+        history = DeliveryChallanTransactionHistory.objects.filter(company = com, challan = dc).last()
+        dict = {'challan':dc,'history':history}
+        challan.append(dict)
+
+      if not all_challan:
+        messages.warning(request, f'No Challans found with Balance amount {bal}.!')
+        # challan = DeliveryChallan.objects.filter(company = com)
+        return redirect(delivery_challan)
+      
+      context = {
+        'staff':staff,'company':com,'allmodules':allmodules, 'challan':challan,
+      }
+      return render(request, 'staff/delivery_challan.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(delivery_challan)
+
+
+def challanFilterWithName(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      name = request.GET['name_filter_value']
+      allmodules= modules_list.objects.get(company=com.id,status='New')
+      all_challan = DeliveryChallan.objects.filter(company = com, party_name = name)
+      challan = []
+      for dc in all_challan:
+        history = DeliveryChallanTransactionHistory.objects.filter(company = com, challan = dc).last()
+        dict = {'challan':dc,'history':history}
+        challan.append(dict)
+
+      if not all_challan:
+        messages.warning(request, f'No Challans found with Party Name {name}.!')
+        # challan = DeliveryChallan.objects.filter(company = com)
+        return redirect(delivery_challan)
+      
+      context = {
+        'staff':staff,'company':com,'allmodules':allmodules, 'challan':challan,
+      }
+      return render(request, 'staff/delivery_challan.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(delivery_challan)
+
+
+def challanFilterWithTotal(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      tot = request.GET['total_filter_value']
+      allmodules= modules_list.objects.get(company=com.id,status='New')
+      all_challan = DeliveryChallan.objects.filter(company = com, total_amount = tot)
+      challan = []
+      for dc in all_challan:
+        history = DeliveryChallanTransactionHistory.objects.filter(company = com, challan = dc).last()
+        dict = {'challan':dc,'history':history}
+        challan.append(dict)
+
+      if not all_challan:
+        messages.warning(request, f'No Challans found with Total Amount {tot}.!')
+        # challan = DeliveryChallan.objects.filter(company = com)
+        return redirect(delivery_challan)
+
+      context = {
+        'staff':staff,'company':com,'allmodules':allmodules, 'challan':challan,
+      }
+      return render(request, 'staff/delivery_challan.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(delivery_challan)
+    
+  
+def challanFilterWithStat(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      stat = request.GET['status']
+      allmodules= modules_list.objects.get(company=com.id,status='New')
+      all_challan = DeliveryChallan.objects.filter(company = com, status = stat)
+      challan = []
+      for dc in all_challan:
+        history = DeliveryChallanTransactionHistory.objects.filter(company = com, challan = dc).last()
+        dict = {'challan':dc,'history':history}
+        challan.append(dict)
+        
+      if not all_challan:
+        messages.warning(request, f'No Challans found with Status {stat}.!')
+        # challan = DeliveryChallan.objects.filter(company = com)
+        return redirect(delivery_challan)
+      
+      context = {
+        'staff':staff,'company':com,'allmodules':allmodules, 'challan':challan,
+      }
+      return render(request, 'staff/delivery_challan.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(delivery_challan)
+
+
+def deleteChallan(request,id):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      challan = DeliveryChallan.objects.get(company = com, id = id)
+
+      # Storing ref number to deleted table
+      # if entry exists and lesser than the current, update and save => Only one entry per company
+
+      if DeletedDeliveryChallan.objects.filter(company = com).exists():
+          deleted = DeletedDeliveryChallan.objects.get(company = com)
+          if deleted:
+              if int(challan.challan_no) > int(deleted.challan_no):
+                  deleted.challan_no = challan.challan_no
+                  deleted.save()
+          
+      else:
+          deleted = DeletedDeliveryChallan(company = com, staff = staff, challan_no = challan.challan_no)
+          deleted.save()
+      
+      DeliveryChallanItems.objects.filter(company = com , cid = challan).delete()
+      challan.delete()
+      messages.success(request, 'Challan deleted successfully.!')
+      return redirect(delivery_challan)
+    except Exception as e:
+      print(e)
+      return redirect(delivery_challan)
+  return redirect('/')
+
+
+def editChallan(request, id):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      dc = DeliveryChallan.objects.get(company = com , id = id)
+      dc_items = DeliveryChallanItems.objects.filter(company = com , cid = dc)
+      allmodules= modules_list.objects.get(company=com.id,status='New')
+      parties = party.objects.filter(company = com)
+      items = ItemModel.objects.filter(company = com)
+      item_units = UnitModel.objects.filter(company=com)
+      context = {
+        'staff':staff,'company':com,'allmodules':allmodules, 'parties':parties,'items':items,'item_units':item_units, 'challan':dc, 'dcItems':dc_items,
+      }
+      return render(request, 'staff/edit_delivery_challan.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(delivery_challan)
+
+
+
+def updateChallan(request, id):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    try:
+      challan = DeliveryChallan.objects.get(company = com, id = id)
+      if request.method == 'POST':
+        challan.date = request.POST['date']
+        challan.due_date = request.POST['due_date']
+        challan.challan_no = request.POST['challan_no']
+        challan.party_name = party.objects.get(id = request.POST['party_name']).party_name
+        challan.contact = request.POST['contact']
+        challan.billing_address = request.POST['address']
+        challan.state_of_supply = 'State' if request.POST['state_supply'] == 'state' else 'Other State'
+        challan.description = request.POST['description']
+        challan.subtotal = request.POST['subtotal']
+        challan.cgst = request.POST['cgst_tax']
+        challan.sgst = request.POST['sgst_tax']
+        challan.igst = request.POST['igst_tax']
+        challan.tax_amount = request.POST['tax_amount']
+        challan.adjustment = request.POST['adjustment']
+        challan.total_amount = request.POST['grand_total']
+        challan.balance = 0
+        challan.status = 'Open'
+        challan.is_converted = False
+
+        challan.save()
+
+        ids = request.POST.getlist('dcItems[]')
+        item = request.POST.getlist("item[]")
+        hsn  = request.POST.getlist("hsn[]")
+        qty = request.POST.getlist("qty[]")
+        price = request.POST.getlist("price[]")
+        tax = request.POST.getlist("taxgst[]") if request.POST['state_supply'] == 'state' else request.POST.getlist("taxigst[]")
+        discount = request.POST.getlist("discount[]")
+        total = request.POST.getlist("total[]")
+        dc_item_ids = request.POST.getlist("id[]")
+        
+        item_ids = [int(id) for id in dc_item_ids]
+
+        
+        dc_item = DeliveryChallanItems.objects.filter(cid = challan)
+        object_ids = [obj.id for obj in dc_item]
+
+        ids_to_delete = [obj_id for obj_id in object_ids if obj_id not in item_ids]
+
+        DeliveryChallanItems.objects.filter(id__in=ids_to_delete).delete()
+        
+        count = DeliveryChallanItems.objects.filter(cid = challan, company = com).count()
+        if len(ids)==len(item)==len(hsn)==len(qty)==len(price)==len(tax)==len(discount)==len(total):
+            try:
+                mapped=zip(ids,item,hsn,qty,price,tax,total,discount,item_ids)
+                mapped=list(mapped)
+                
+                for ele in mapped:
+                    if int(len(item))>int(count):
+                        if ele[8] == 0:
+                            itemAdd= DeliveryChallanItems.objects.create(name = ele[1], hsn=ele[2],quantity=ele[3],price=ele[4],tax=ele[5],total=ele[6],discount=ele[7] ,cid = challan, staff = staff, company = com, item = ItemModel.objects.get(company = com, id = ele[0]))
+                        else:
+                            itemAdd = DeliveryChallanItems.objects.filter( id = ele[8],company = com).update(name = ele[1],hsn=ele[2],quantity=ele[3],price=ele[4],tax=ele[5],total=ele[6],discount=ele[7], item = ItemModel.objects.get(company = com, id = ele[0]))
+                    else:
+                        itemAdd = DeliveryChallanItems.objects.filter( id = ele[8],company=com).update(name = ele[1],hsn=ele[2],quantity=ele[3],price=ele[4],tax=ele[5],total=ele[6],discount=ele[7], item = ItemModel.objects.get(company = com, id = ele[0]))
+            except Exception as e:
+                    print(e)
+                    mapped=zip(ids,item,hsn,qty,price,tax,total,discount,item_ids)
+                    mapped=list(mapped)
+                    
+                    for ele in mapped:
+                        created =DeliveryChallanItems.objects.filter(id=ele[8] ,company=com).update(name = ele[1],hsn=ele[2],quantity=ele[3],price=ele[4],tax=ele[5],total=ele[6],discount=ele[7], item = ItemModel.objects.get(company = com, id = ele[0]))
+
+        history = DeliveryChallanTransactionHistory(
+          staff = staff,
+          challan = challan,
+          company = com,
+          action = "Edit"
+        )
+        history.save()
+
+        return redirect(viewChallan,id)
+    except Exception as e:
+      print(e)
+      return redirect(editChallan, id)
+
+
+def challanTransactionHistory(request,id):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    allmodules= modules_list.objects.get(company=com.id,status='New')
+    try:
+      dc = DeliveryChallan.objects.get(company = com, id = id)
+      history = DeliveryChallanTransactionHistory.objects.filter(company = com, challan = dc)
+      context = {
+        'staff':staff, 'company':com, 'allmodules':allmodules, 'history':history,
+      }
+      return render(request, 'staff/delivery_challan_transaction_history.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(delivery_challan)
+
+
+def importEstimateFromExcel(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)    
+    
+    current_datetime = timezone.now()
+    dateToday =  current_datetime.date()
+
+    if request.method == "POST" and 'excel_file' in request.FILES:
+    
+        excel_file = request.FILES['excel_file']
+
+        wb = load_workbook(excel_file)
+
+        # checking estimate sheet columns
+        try:
+          ws = wb["estimate"]
+        except:
+          print('sheet not found')
+          messages.error(request,'`estimate` sheet not found.! Please check.')
+          return redirect(estimate_quotation)
+
+        try:
+          ws = wb["items"]
+        except:
+          print('sheet not found')
+          messages.error(request,'`items` sheet not found.! Please check.')
+          return redirect(estimate_quotation)
+        
+        ws = wb["estimate"]
+        estimate_columns = ['SLNO','DATE','NAME','STATE OF SUPPLY','DESCRIPTION','SUB TOTAL','IGST','CGST','SGST','TAX AMOUNT','ADJUSTMENT','GRAND TOTAL']
+        estimate_sheet = [cell.value for cell in ws[1]]
+        if estimate_sheet != estimate_columns:
+          print('invalid sheet')
+          messages.error(request,'`estimate` sheet column names or order is not in the required formate.! Please check.')
+          return redirect(estimate_quotation)
+
+        for row in ws.iter_rows(min_row=2, values_only=True):
+          slno,date,name,state_of_supply,description,subtotal,igst,cgst,sgst,taxamount,adjustment,grandtotal = row
+          if slno is None or state_of_supply is None or taxamount is None or grandtotal is None:
+            print('estimate == invalid data')
+            messages.error(request,'`estimate` sheet entries missing required fields.! Please check.')
+            return redirect(estimate_quotation)
+        
+        # checking items sheet columns
+        ws = wb["items"]
+        items_columns = ['ESTIMATE NO','NAME','HSN','QUANTITY','PRICE','TAX PERCENTAGE','DISCOUNT','TOTAL']
+        items_sheet = [cell.value for cell in ws[1]]
+        if items_sheet != items_columns:
+          print('invalid sheet')
+          messages.error(request,'`items` sheet column names or order is not in the required formate.! Please check.')
+          return redirect(estimate_quotation)
+
+        for row in ws.iter_rows(min_row=2, values_only=True):
+          est_no,name,hsn,quantity,price,tax_percentage,discount,total = row
+          if est_no is None or name is None or quantity is None or tax_percentage is None or total is None:
+            print('items == invalid data')
+            messages.error(request,'`items` sheet entries missing required fields.! Please check.')
+            return redirect(estimate_quotation)
+        
+        # getting data from estimate sheet and create estimate.
+        ws = wb['estimate']
+        for row in ws.iter_rows(min_row=2, values_only=True):
+          slno,date,name,state_of_supply,description,subtotal,igst,cgst,sgst,taxamount,adjustment,grandtotal = row
+          estNo = slno
+          if slno is None:
+            continue
+          # Fetching last bill and assigning upcoming bill no as current + 1
+          # Also check for if any bill is deleted and bill no is continuos w r t the deleted bill
+          latest_bill = Estimate.objects.filter(company = com).order_by('-id').first()
+          
+          if latest_bill:
+              last_number = int(latest_bill.ref_no)
+              new_number = last_number + 1
+          else:
+              new_number = 1
+
+          if DeletedEstimate.objects.filter(company = com).exists():
+              deleted = DeletedEstimate.objects.get(company = com)
+              
+              if deleted:
+                  while int(deleted.ref_no) >= new_number:
+                      new_number+=1
+          try:
+            cntct = party.objects.get(company = com, party_name = name).contact
+            adrs = party.objects.get(company = com, party_name = name).address
+          except:
+            pass
+
+          if date is None:
+            date = dateToday
+
+          print(date,new_number,name,cntct,adrs,state_of_supply,description,subtotal,igst,cgst,sgst,taxamount,adjustment,grandtotal)
+
+          estimate = Estimate(
+              staff = staff,
+              company = com,
+              date = date,
+              ref_no = new_number,
+              party_name = name,
+              contact = cntct,
+              billing_address = adrs,
+              state_of_supply = 'State' if str(state_of_supply).lower() == 'state' else 'Other State',
+              description = description,
+              subtotal = subtotal,
+              cgst = cgst,
+              sgst = sgst,
+              igst = igst,
+              tax_amount = taxamount,
+              adjustment = adjustment,
+              total_amount = grandtotal,
+              balance = 0,
+              status = 'Open',
+              is_converted = False
+          )
+          estimate.save()
+
+          # Transaction history
+          history = EstimateTransactionHistory(
+            staff = staff,
+            estimate = estimate,
+            company = com,
+            action = "Create"
+          )
+          history.save()
+
+          # Items for the estimate
+          ws = wb['items']
+          for row in ws.iter_rows(min_row=2, values_only=True):
+            est_no,name,hsn,quantity,price,tax_percentage,discount,total = row
+            if int(est_no) == int(estNo):
+              print(row)
+              if estimate.state_of_supply == 'State' and tax_percentage:
+                tx = 'GST'+str(tax_percentage)+'['+str(tax_percentage)+'%]'
+              elif estimate.state_of_supply == 'Other State' and tax_percentage:
+                tx = 'IGST'+str(tax_percentage)+'['+str(tax_percentage)+'%]'
+              if discount is None:
+                discount=0
+              if price is None:
+                price=0
+              try:
+                itm = ItemModel.objects.get(company = com, item_name = name)
+              except:
+                pass
+              Estimate_items.objects.create(staff = staff, eid = estimate, company = com, item = itm,name = name,hsn=hsn,quantity=int(quantity),price = float(price),tax=tx, discount = float(discount),total=float(total))
+    messages.success(request, 'Data imported successfully.!')
+    return redirect(estimate_quotation)
+  
+
+def importChallanFromExcel(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)    
+    
+    current_datetime = timezone.now()
+    dateToday =  current_datetime.date()
+
+    if request.method == "POST" and 'excel_file' in request.FILES:
+    
+        excel_file = request.FILES['excel_file']
+
+        wb = load_workbook(excel_file)
+
+        # checking challan sheet columns
+        try:
+          ws = wb["challan"]
+        except:
+          print('sheet not found')
+          messages.error(request,'`challan` sheet not found.! Please check.')
+          return redirect(delivery_challan)
+
+        try:
+          ws = wb["items"]
+        except:
+          print('sheet not found')
+          messages.error(request,'`items` sheet not found.! Please check.')
+          return redirect(delivery_challan)
+        
+        ws = wb["challan"]
+        estimate_columns = ['SLNO','DATE','DUE DATE','NAME','STATE OF SUPPLY','DESCRIPTION','SUB TOTAL','IGST','CGST','SGST','TAX AMOUNT','ADJUSTMENT','GRAND TOTAL']
+        estimate_sheet = [cell.value for cell in ws[1]]
+        if estimate_sheet != estimate_columns:
+          print('invalid sheet')
+          messages.error(request,'`challan` sheet column names or order is not in the required formate.! Please check.')
+          return redirect(delivery_challan)
+
+        for row in ws.iter_rows(min_row=2, values_only=True):
+          slno,date,due_date,name,state_of_supply,description,subtotal,igst,cgst,sgst,taxamount,adjustment,grandtotal = row
+          if slno is None or state_of_supply is None or taxamount is None or grandtotal is None:
+            print('challan == invalid data')
+            messages.error(request,'`challan` sheet entries missing required fields.! Please check.')
+            return redirect(delivery_challan)
+        
+        # checking items sheet columns
+        ws = wb["items"]
+        items_columns = ['CHALLAN NO','NAME','HSN','QUANTITY','PRICE','TAX PERCENTAGE','DISCOUNT','TOTAL']
+        items_sheet = [cell.value for cell in ws[1]]
+        if items_sheet != items_columns:
+          print('invalid sheet')
+          messages.error(request,'`items` sheet column names or order is not in the required formate.! Please check.')
+          return redirect(delivery_challan)
+
+        for row in ws.iter_rows(min_row=2, values_only=True):
+          chl_no,name,hsn,quantity,price,tax_percentage,discount,total = row
+          if chl_no is None or name is None or quantity is None or tax_percentage is None or total is None:
+            print('items == invalid data')
+            messages.error(request,'`items` sheet entries missing required fields.! Please check.')
+            return redirect(delivery_challan)
+        
+        # getting data from estimate sheet and create estimate.
+        ws = wb['challan']
+        for row in ws.iter_rows(min_row=2, values_only=True):
+          slno,date,due_date,name,state_of_supply,description,subtotal,igst,cgst,sgst,taxamount,adjustment,grandtotal = row
+          dcNo = slno
+          if slno is None:
+            continue
+          # Fetching last bill and assigning upcoming bill no as current + 1
+          # Also check for if any bill is deleted and bill no is continuos w r t the deleted bill
+          latest_bill = DeliveryChallan.objects.filter(company = com).order_by('-id').first()
+          
+          if latest_bill:
+              last_number = int(latest_bill.challan_no)
+              new_number = last_number + 1
+          else:
+              new_number = 1
+
+          if DeletedDeliveryChallan.objects.filter(company = com).exists():
+              deleted = DeletedDeliveryChallan.objects.get(company = com)
+              
+              if deleted:
+                  while int(deleted.challan_no) >= new_number:
+                      new_number+=1
+          try:
+            cntct = party.objects.get(company = com, party_name = name).contact
+            adrs = party.objects.get(company = com, party_name = name).address
+          except:
+            pass
+
+          if date is None:
+            date = dateToday
+
+          if due_date is None:
+            due_date = dateToday
+
+          print(date,due_date,new_number,name,cntct,adrs,state_of_supply,description,subtotal,igst,cgst,sgst,taxamount,adjustment,grandtotal)
+
+          challan = DeliveryChallan(
+              staff = staff,
+              company = com,
+              date = date,
+              due_date = due_date,
+              challan_no = new_number,
+              party_name = name,
+              contact = cntct,
+              billing_address = adrs,
+              state_of_supply = 'State' if str(state_of_supply).lower() == 'state' else 'Other State',
+              description = description,
+              subtotal = subtotal,
+              cgst = cgst,
+              sgst = sgst,
+              igst = igst,
+              tax_amount = taxamount,
+              adjustment = adjustment,
+              total_amount = grandtotal,
+              balance = 0,
+              status = 'Open',
+              is_converted = False
+          )
+          challan.save()
+
+          # Transaction history
+          history = DeliveryChallanTransactionHistory(
+            staff = staff,
+            challan = challan,
+            company = com,
+            action = "Create"
+          )
+          history.save()
+
+          # Items for the estimate
+          ws = wb['items']
+          for row in ws.iter_rows(min_row=2, values_only=True):
+            chl_no,name,hsn,quantity,price,tax_percentage,discount,total = row
+            if int(chl_no) == int(dcNo):
+              print(row)
+              if challan.state_of_supply == 'State' and tax_percentage:
+                tx = 'GST'+str(tax_percentage)+'['+str(tax_percentage)+'%]'
+              elif challan.state_of_supply == 'Other State' and tax_percentage:
+                tx = 'IGST'+str(tax_percentage)+'['+str(tax_percentage)+'%]'
+              if discount is None:
+                discount=0
+              if price is None:
+                price=0
+              try:
+                itm = ItemModel.objects.get(company = com, item_name = name)
+              except:
+                pass
+              DeliveryChallanItems.objects.create(staff = staff, cid = challan, company = com, item = itm,name = name,hsn=hsn,quantity=int(quantity),price = float(price),tax=tx, discount = float(discount),total=float(total))
+    messages.success(request, 'Data imported successfully.!')
+    return redirect(delivery_challan)
+
+
+
+def downloadEstimateSampleImportFile(request):
+    
+    estimate_table_data = [['SLNO','DATE','NAME','STATE OF SUPPLY','DESCRIPTION','SUB TOTAL','IGST','CGST','SGST','TAX AMOUNT','ADJUSTMENT','GRAND TOTAL'], ['1', '2023-11-20', 'Alwin', 'State', 'Sample Description','1000','0','25','25','50','0','1050']]
+    items_table_data = [['ESTIMATE NO', 'NAME','HSN','QUANTITY','PRICE','TAX PERCENTAGE','DISCOUNT','TOTAL'], ['1', 'Test Item 1','789987','1','1000','5','0','1000']]
+
+    wb = Workbook()
+
+    sheet1 = wb.active
+    sheet1.title = 'estimate'
+    sheet2 = wb.create_sheet(title='items')
+
+    # Populate the sheets with data
+    for row in estimate_table_data:
+        sheet1.append(row)
+
+    for row in items_table_data:
+        sheet2.append(row)
+
+    # Create a response with the Excel file
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=estimate_sample_file.xlsx'
+
+    # Save the workbook to the response
+    wb.save(response)
+
+    return response
+
+
+def downloadChallanSampleImportFile(request):
+    
+    challan_table_data = [['SLNO','DATE','DUE DATE','NAME','STATE OF SUPPLY','DESCRIPTION','SUB TOTAL','IGST','CGST','SGST','TAX AMOUNT','ADJUSTMENT','GRAND TOTAL'], ['1', '2023-11-20', '2023-11-20', 'Alwin', 'State', 'Sample Description','1000','0','25','25','50','0','1050']]
+    items_table_data = [['CHALLAN NO', 'NAME','HSN','QUANTITY','PRICE','TAX PERCENTAGE','DISCOUNT','TOTAL'], ['1', 'Test Item 1','788987','1','1000','5','0','1000']]
+
+    wb = Workbook()
+
+    sheet1 = wb.active
+    sheet1.title = 'challan'
+    sheet2 = wb.create_sheet(title='items')
+
+    # Populate the sheets with data
+    for row in challan_table_data:
+        sheet1.append(row)
+
+    for row in items_table_data:
+        sheet2.append(row)
+
+    # Create a response with the Excel file
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=challan_sample_file.xlsx'
+
+    # Save the workbook to the response
+    wb.save(response)
+
+    return response
+
+
+def estimateBillPdf(request,id):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)  
+
+    bill = Estimate.objects.get(company = com, id = id)
+    items = Estimate_items.objects.filter(company = com, eid = bill)
+
+    total = bill.total_amount
+    words_total = num2words(total)
+    
+    context = {'staff':staff,'bill': bill, 'company': com,'items':items, 'total':words_total}
+    
+    template_path = 'staff/estimate_bill_pdf.html'
+    fname = 'bill'+str(bill.ref_no)
+
+    # return render(request, 'staff/estimate_bill_pdf.html',context)
+    # Create a Django response object, and specify content_type as pdftemp_creditnote
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] =f'attachment; filename = Estimate_{fname}.pdf'
+    # find the template and render it.
+    template = get_template(template_path)
+    html = template.render(context)
+
+    # create a pdf
+    pisa_status = pisa.CreatePDF(
+       html, dest=response)
+    # if error then show some funny view
+    if pisa_status.err:
+       return HttpResponse('We had some errors <pre>' + html + '</pre>')
+    return response
+
+
+def challanBillPdf(request,id):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)  
+
+    bill = DeliveryChallan.objects.get(company = com, id = id)
+    items = DeliveryChallanItems.objects.filter(company = com, cid = bill)
+
+    total = bill.total_amount
+    words_total = num2words(total)
+    
+    context = {'staff':staff,'bill': bill, 'company': com,'items':items, 'total':words_total}
+    
+    template_path = 'staff/challan_bill_pdf.html'
+    fname = 'bill'+str(bill.challan_no)
+
+    # return render(request, 'staff/challan_bill_pdf.html',context)
+    # Create a Django response object, and specify content_type as pdftemp_creditnote
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] =f'attachment; filename = DeliveryChallan_{fname}.pdf'
+    # find the template and render it.
+    template = get_template(template_path)
+    html = template.render(context)
+
+    # create a pdf
+    pisa_status = pisa.CreatePDF(
+       html, dest=response)
+    # if error then show some funny view
+    if pisa_status.err:
+       return HttpResponse('We had some errors <pre>' + html + '</pre>')
+    return response
+
+
+def viewEstimate(request, id):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    allmodules= modules_list.objects.get(company=com.id,status='New')
+    try:
+      bill = Estimate.objects.get(company = com, id = id)
+      items = Estimate_items.objects.filter(company = com , eid = bill)
+      context= {
+        'staff':staff, 'company':com, 'bill':bill, 'items': items,'allmodules':allmodules
+      }
+      return render(request, 'staff/view_estimate.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(estimate_quotation)
+    
+
+def viewChallan(request, id):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+    allmodules= modules_list.objects.get(company=com.id,status='New')
+    try:
+      bill = DeliveryChallan.objects.get(company = com, id = id)
+      items = DeliveryChallanItems.objects.filter(company = com , cid = bill)
+      context= {
+        'staff':staff, 'company':com, 'bill':bill, 'items': items,'allmodules':allmodules
+      }
+      return render(request, 'staff/view_challan.html',context)
+    except Exception as e:
+      print(e)
+      return redirect(delivery_challan)
+    
+
+def addNewParty(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+
+    if request.method == 'POST':
+      Company = company.objects.get(id = staff.company.id)
+      user_id = request.user.id
+      
+      party_name = request.POST['partyname']
+      gst_no = request.POST['gstno']
+      contact = request.POST['contact']
+      gst_type = request.POST['gst']
+      state = request.POST['state']
+      address = request.POST['address']
+      email = request.POST['email']
+      openingbalance = request.POST.get('balance', '')
+      payment = request.POST.get('paymentType', '')
+      creditlimit = request.POST.get('creditlimit', '')
+      current_date = request.POST['currentdate']
+      End_date = request.POST.get('enddate', None)
+      additionalfield1 = request.POST['additionalfield1']
+      additionalfield2 = request.POST['additionalfield2']
+      additionalfield3 = request.POST['additionalfield3']
+      comp=Company
+      if (not party_name):
+        return render(request, 'add_parties.html')
+
+      part = party(party_name=party_name, gst_no=gst_no,contact=contact,gst_type=gst_type, state=state,address=address, email=email, openingbalance=openingbalance,payment=payment,
+                      creditlimit=creditlimit,current_date=current_date,End_date=End_date,additionalfield1=additionalfield1,additionalfield2=additionalfield2,additionalfield3=additionalfield3,company=comp)
+      part.save()
+
+      return JsonResponse({'status':True})
+
+
+def addNewItem(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+            
+    else:
+      return redirect('/')
+    staff =  staff_details.objects.get(id=staff_id)
+    com =  company.objects.get(id = staff.company.id)
+
+    if request.method=='POST':
+      company_user_data = com
+      item_name = request.POST.get('item_name')
+      item_hsn = request.POST.get('item_hsn')
+      item_unit = request.POST.get('item_unit')
+      item_taxable = request.POST.get('item_taxable')
+      item_gst = request.POST.get('item_gst')
+      item_igst = request.POST.get('item_igst')
+      item_sale_price = request.POST.get('item_sale_price')
+      item_purchase_price = request.POST.get('item_purchase_price')
+      item_opening_stock = request.POST.get('item_opening_stock')
+      item_current_stock = item_opening_stock
+      if item_opening_stock == '' or None :
+        item_opening_stock = 0
+        item_current_stock = 0
+      item_at_price = request.POST.get('item_at_price')
+      if item_at_price == '' or None:
+        item_at_price =0
+      item_date = request.POST.get('item_date')
+      item_min_stock_maintain = request.POST.get('item_min_stock_maintain')
+      if item_min_stock_maintain == ''  or None:
+        item_min_stock_maintain = 0
+      item_data = ItemModel(company=company_user_data,
+        item_name=item_name,
+        item_hsn=item_hsn,
+        item_unit=item_unit,
+        item_taxable=item_taxable,
+        item_gst=item_gst,
+        item_igst=item_igst,
+        item_sale_price=item_sale_price,
+        item_purchase_price=item_purchase_price,
+        item_opening_stock=item_opening_stock,
+        item_current_stock=item_current_stock,
+        item_at_price=item_at_price,
+        item_date=item_date,
+        item_min_stock_maintain=item_min_stock_maintain
+      )
+      item_data.save()
+
+      return JsonResponse({'status':True})
+    
+
+# ===================end ---shemeem =============================
+
+
+# ----------athul-22-11-2023--------
+
+def register(request):
+  if request.method == 'POST':
+    first_name = request.POST['fname']
+    last_name = request.POST['lname']
+    user_name = request.POST['uname']
+    email_id = request.POST['eid']
+    mobile = request.POST['ph']
+    passw = request.POST['pass']
+    c_passw = request.POST['cpass']
+    action = request.POST['r']
+    did = request.POST['did']
+    if did != '':
+      if Distributors_details.objects.filter(distributor_id=did).exists():
+        distributor = Distributors_details.objects.get(distributor_id=did)
+      else :
+          messages.info(request, 'Sorry, distributor id does not exists')
+          return redirect('company_reg')
+    
+
+    
+    if passw == c_passw:
+      if User.objects.filter(username = user_name).exists():
+        messages.info(request, 'Sorry, Username already exists')
+        return redirect('company_reg')
+      
+
+      elif not User.objects.filter(email = email_id).exists():
+        
+        user_data = User.objects.create_user(first_name = first_name,
+                        last_name = last_name,
+                        username = user_name,
+                        email = email_id,
+                        password = passw)
+        user_data.save()
+        if did != '':
+          data = User.objects.get(id = user_data.id)
+          cust_data = company( contact=mobile,
+                             user = data,reg_action=action,Distributors=distributor)
+          cust_data.save()
+          demo_staff=staff_details(company=cust_data,
+                                   email=email_id,
+                                   position='company',
+                                   user_name=user_name,
+                                   password=passw,
+                                   contact=mobile)
+          demo_staff.save()
+          return redirect('company_reg2')
+        else:
+          data = User.objects.get(id = user_data.id)
+          cust_data = company( contact=mobile,
+                             user = data,reg_action=action)
+          cust_data.save()
+          demo_staff=staff_details(company=cust_data,
+                                   email=email_id,
+                                   position='company',
+                                   user_name=user_name,
+                                   password=passw,
+                                   contact=mobile)
+          demo_staff.save()
+
+          print(demo_staff.company.company_name)
+        
+          return redirect('company_reg2')
+      else:
+        messages.info(request, 'Sorry, Email already exists')
+        return redirect('company_reg')
+    return render(request,'company/register.html')
+  
+def Allmodule(request,uid):
+  user=User.objects.get(id=uid)
+  return render(request,'company/modules.html',{'user':user})
+
+def addmodules(request,uid):
+  if request.method == 'POST':
+    com=company.objects.get(user=uid)
+    c1=request.POST.get('c1')
+    c2=request.POST.get('c2')
+    c3=request.POST.get('c3')
+    c4=request.POST.get('c4')
+    c5=request.POST.get('c5')
+    c6=request.POST.get('c6')
+    c7=request.POST.get('c7')
+    c8=request.POST.get('c8')
+    c9=request.POST.get('c9')
+    c10=request.POST.get('c10')
+    c11=request.POST.get('c11')
+    c12=request.POST.get('c12')
+    c13=request.POST.get('c13')
+    c14=request.POST.get('c14')
+    c15=request.POST.get('c15')
+    
+    data=modules_list(company=com,sales_invoice = c1,
+                      Estimate=c2,Payment_in=c3,sales_order=c4,
+                      Delivery_challan=c5,sales_return=c6,Purchase_bills=c7,
+                      Payment_out=c8,Purchase_order=c9,Purchase_return=c10,
+                      Bank_account=c11,Cash_in_hand=c12, cheques=c13,Loan_account=c14,Upi=c15)
+    data.save()
+
+    return redirect('log_page')
+    
+def adminaccept(request,id):
+  data=company.objects.filter(id=id).update(superadmin_approval=1)
+  data1=staff_details.objects.filter(company=id,position='company').update(Action=1)
+  return redirect('client_request')
+def adminreject(request,id):
+  data1=staff_details.objects.get(company=id,position='company')
+  data1.delete()
+  data=company.objects.get(id=id)
+  data.user.delete()
+  data.delete()
+  return redirect('client_request')
+
+
+def log_page(request):
+  return render(request, 'log.html')
+  
+def login(request):
+  if request.method == 'POST':
+    user_name = request.POST['username']
+    passw = request.POST['password']
+    
+    log_user = auth.authenticate(username = user_name,
+                                  password = passw)
+    
+    if log_user is not None:
+      auth.login(request, log_user)
+
+      # ---super admin---
+
+      if request.user.is_staff==1:
+        return redirect('adminhome')
+      
+      if Distributors_details.objects.filter(user=request.user).exists():
+        data=Distributors_details.objects.get(user=request.user)
+        if data.Log_Action == 1:
+            return redirect('distributor_home')
+        else:
+            messages.info(request, 'Approval is Pending..')
+            return redirect('log_page')
+        
+    if staff_details.objects.filter(user_name=user_name,password=passw,position='company').exists():
+      data = staff_details.objects.get(user_name=user_name,password=passw,position='company') 
+
+      if data.company.superadmin_approval == 1 or data.company.Distributor_approval == 1:
+        request.session["staff_id"]=data.id
+        if 'staff_id' in request.session:
+          if request.session.has_key('staff_id'):
+            staff_id = request.session['staff_id']
+            print(staff_id)
+ 
+          return redirect('homepage')  
+      else:
+        messages.info(request, 'Approval is Pending..')
+        return redirect('log_page')
+      
+    if staff_details.objects.filter(user_name=user_name,password=passw,position='staff').exists():
+      data = staff_details.objects.get(user_name=user_name,password=passw,position='staff')   
+      if data.Action == 1:
+        request.session["staff_id"]=data.id
+        if 'staff_id' in request.session:
+          if request.session.has_key('staff_id'):
+            staff_id = request.session['staff_id']
+            print(staff_id)
+ 
+            return redirect('staffhome')  
+      else:
+        messages.info(request, 'Approval is Pending..')
+        return redirect('log_page')
+    else:
+      messages.info(request, 'Invalid Username or Password. Try Again.')
+      return redirect('log_page')  
+  else:  
+   return redirect('log_page')   
+  
+
+def homepage(request):
+ 
+  staff_id = request.session['staff_id']
+  print(staff_id)
+       
+  staff =  staff_details.objects.get(id = staff_id)
+  print(staff.position)
+  allmodules= modules_list.objects.get(company=staff.company.id,status='New')
+  context = {
+              'staff' : staff,
+              'allmodules':allmodules
+          }
+  return render(request, 'company/homepage.html', context)
+
+def staff_request(request):
+  staff_id = request.session['staff_id']
+  print(staff_id)    
+  staff =  staff_details.objects.get(id = staff_id)
+  data = staff_details.objects.filter(company=staff.company.id,Action=0,position='staff').order_by('-id')
+  allmodules= modules_list.objects.get(company=staff.company.id,status='New')
+  return render(request,'company/staff_request.html',{'staff':staff,'data':data,'allmodules':allmodules}) 
+
+# @login_required(login_url='login')
+def staffhome(request):
+  staff_id = request.session['staff_id']
+  print(staff_id)    
+  staff =  staff_details.objects.get(id = staff_id)
+  
+
+  allmodules= modules_list.objects.get(company=staff.company,status='New')
+  context = {
+              'staff' : staff,
+              'allmodules':allmodules
+
+          }
+  return render(request, 'staff/staffhome.html', context)
+
+
+ 
+def View_staff(request):
+  staff_id = request.session['staff_id']
+  print(staff_id)    
+  staff =  staff_details.objects.get(id = staff_id)
+  data = staff_details.objects.filter(company=staff.company.id,Action=1,position='staff').order_by('-id')
+  allmodules= modules_list.objects.get(company=staff.company.id,status='New')
+
+  return render(request, 'company/view_staff.html',{'staff':staff,'data':data,'allmodules':allmodules})
+
+def Companyprofile(request):
+  staff_id = request.session['staff_id']
+  print(staff_id)    
+  staff =  staff_details.objects.get(id = staff_id)
+  allmodules= modules_list.objects.get(company=staff.company.id,status='New')
+  return render(request,'company/companyprofile.html',{'staff':staff,'allmodules':allmodules})
+
+def editcompanyprofile(request):
+  staff_id = request.session['staff_id']
+  print(staff_id)    
+  staff =  staff_details.objects.get(id = staff_id)
+  allmodules= modules_list.objects.get(company=staff.company.id,status='New')
+  terms=payment_terms.objects.all()
+  return render(request,'company/editcompanyprofile.html',{'staff':staff,'allmodules':allmodules,'terms':terms})
+
+def editcompanyprofile_action(request):
+  staff_id = request.session['staff_id']
+  print(staff_id) 
+  staff =  staff_details.objects.get(id = staff_id)
+ 
+  if request.method == 'POST':
+    staff.company.company_name = request.POST['cname']
+    staff.company.user.email = request.POST['email']
+
+    staff.email = request.POST['email']
+
+    staff.company.contact = request.POST['ph']
+
+    staff.contact = request.POST['ph']
+
+    staff.company.address = request.POST['address']
+    staff.company.city = request.POST['city']
+    staff.company.state = request.POST['state']
+    staff.company.country = request.POST['country']
+    staff.company.pincode = request.POST['pincode']
+
+    t = request.POST['select']
+    terms = payment_terms.objects.get(id=t)
+    staff.company.dateperiod = terms
+    staff.company.start_date=date.today()
+    days=int(terms.days)
+
+    end= date.today() + timedelta(days=days)
+    staff.company.End_date=end
+
+    old=staff.company.profile_pic
+    new=request.FILES.get('image')
+    if old!=None and new==None:
+      staff.company.profile_pic=old
+    else:
+      staff.company.profile_pic=new
+    
+    staff.company.save() 
+    staff.company.user.save() 
+    staff.save()
+    return redirect('Companyprofile') 
+
+
+
+  return redirect('Companyprofile')
+
+
+def editmodule(request):
+  staff_id = request.session['staff_id']
+  print(staff_id) 
+  staff =  staff_details.objects.get(id = staff_id)
+  allmodules= modules_list.objects.get(company=staff.company.id,status='New')
+  return render(request,'company/editmodule.html',{'staff':staff,'allmodules':allmodules})
+
+def editmodule_action(request):
+  if request.method == 'POST':
+    staff_id = request.session['staff_id']
+    print(staff_id) 
+    staff =  staff_details.objects.get(id = staff_id)
+    com = company.objects.get(id = staff.company.id)
+    # if modules_list.objects.filter(company=com.id,status='Old').exists():
+    #   old=modules_list.objects.filter(company=com.id,status='Old')
+    #   old.delete()
+
+    # old_data=modules_list.objects.get(company=com.id,status='New')  
+    # old_data.status='Old'
+    # old_data.save()
+
+
+
+    c1=request.POST.get('c1')
+    c2=request.POST.get('c2')
+    c3=request.POST.get('c3')
+    c4=request.POST.get('c4')
+    c5=request.POST.get('c5')
+    c6=request.POST.get('c6')
+    c7=request.POST.get('c7')
+    c8=request.POST.get('c8')
+    c9=request.POST.get('c9')
+    c10=request.POST.get('c10')
+    c11=request.POST.get('c11')
+    c12=request.POST.get('c12')
+    c13=request.POST.get('c13')
+    c14=request.POST.get('c14')
+    c15=request.POST.get('c15')
+    
+    data=modules_list(company=com,sales_invoice = c1,
+                      Estimate=c2,Payment_in=c3,sales_order=c4,
+                      Delivery_challan=c5,sales_return=c6,Purchase_bills=c7,
+                      Payment_out=c8,Purchase_order=c9,Purchase_return=c10,
+                      Bank_account=c11,Cash_in_hand=c12, cheques=c13,Loan_account=c14,Upi=c15,status='Pending')
+    data.save()
+    data1=modules_list.objects.filter(company=com.id,status='Pending').update(update_action=1)
+    return redirect('Companyprofile')
+    
+    
+  return redirect('Companyprofile')
+
+
+def companyreport(request):
+  staff_id = request.session['staff_id']
+  print(staff_id) 
+  staff =  staff_details.objects.get(id = staff_id)
+  allmodules= modules_list.objects.get(company=staff.company.id,status='New')
+  return render(request,'company/companyreport.html',{'staff':staff,'allmodules':allmodules}) 
+
+
+
+
+
+def staff_profile(request):
+  staff_id = request.session['staff_id']
+  staff =  staff_details.objects.get(id=staff_id)
+  allmodules= modules_list.objects.get(company=staff.company.id,status='New')
+  context = {
+              'staff' : staff,
+              'allmodules':allmodules
+
+          }
+  return render(request,'staff/staff_profile.html',context)
+
+def editstaff_profile(request):
+  staff_id = request.session['staff_id']
+  staff =  staff_details.objects.get(id=staff_id)
+  allmodules= modules_list.objects.get(company=staff.company,status='New')
+  context = {
+              'staff' : staff,
+              'allmodules':allmodules
+
+          }
+  return render(request,'staff/editstaff_profile.html',context)
+
+def editstaff_profile_action(request):
+  if request.method == 'POST':
+    staff_id = request.session['staff_id']
+    staff =  staff_details.objects.get(id=staff_id)
+    staff.first_name = request.POST['fname']
+    staff.last_name = request.POST['lname']
+    staff.user_name = request.POST['uname']
+    staff.email = request.POST['email']
+    staff.contact = request.POST['ph']
+    old=staff.img
+    new=request.FILES.get('image')
+    if old!=None and new==None:
+      staff.img=old
+    else:
+      staff.img=new
+
+    staff.save()  
+
+    return redirect ('staff_profile')
+  return redirect ('staff_profile')
+
+def view_parties(request):
+  staff_id = request.session['staff_id']
+  staff =  staff_details.objects.get(id=staff_id)
+  
+ 
+  Party=party.objects.filter(company=staff.company.id)
+  allmodules= modules_list.objects.get(company=staff.company,status='New')
+  return render(request, 'company/view_parties.html',{'staff':staff,'allmodules':allmodules,'Party':Party})
+
+def save_parties(request):
+    if request.method == 'POST':
+        staff_id = request.session['staff_id']
+        staff =  staff_details.objects.get(id=staff_id)
+        
+        party_name = request.POST['partyname']
+        gst_no = request.POST['gstno']
+        contact = request.POST['contact']
+        gst_type = request.POST['gst']
+        state = request.POST['state']
+        address = request.POST['address']
+        email = request.POST['email']
+        openingbalance = request.POST.get('balance', '')
+        payment = request.POST.get('paymentType', '')
+        creditlimit = request.POST.get('creditlimit', '')
+        current_date = request.POST['currentdate']
+        End_date = request.POST.get('enddate', None)
+        additionalfield1 = request.POST['additionalfield1']
+        additionalfield2 = request.POST['additionalfield2']
+        additionalfield3 = request.POST['additionalfield3']
+       
+        if (
+          not party_name
+          
+      ):
+          return render(request, 'add_parties.html')
+
+        part = party(party_name=party_name, gst_no=gst_no,contact=contact,gst_type=gst_type, state=state,address=address, email=email, openingbalance=openingbalance,payment=payment,
+                       creditlimit=creditlimit,current_date=current_date,End_date=End_date,additionalfield1=additionalfield1,additionalfield2=additionalfield2,additionalfield3=additionalfield3,user=staff.company.user,company=staff.company)
+        part.save() 
+
+        if 'save_and_new' in request.POST:
+            
+            return render(request, 'company/add_parties.html')
+        else:
+          
+            return redirect('view_parties')
+
+    return render(request, 'company/add_parties.html')  
+
+def view_party(request,id):
+  staff_id = request.session['staff_id']
+  staff =  staff_details.objects.get(id=staff_id)
+  getparty=party.objects.get(id=id)
+  Party=party.objects.filter(company=staff.company.id)
+  allmodules= modules_list.objects.get(company=staff.company,status='New')
+  return render(request, 'company/view_party.html',{'staff':staff,'allmodules':allmodules,'Party':Party,'getparty':getparty})
+
+
 #********************************************keerthana***********************************************************
 
 @login_required(login_url='login')
@@ -2364,21 +4704,19 @@ def create_sale(request):
 
         # Using filter instead of get to handle multiple party objects
         parti = party.objects.filter(user=request.user.id)
+        parties = party.objects.filter(company=Company)
+
 
         # Assuming you want to display the state of the first party if multiple
-        pa = parti.first()
-        if pa is None:
-            # Handle the case where no party is found
-            return HttpResponse("No party found for the user.")
-
-        print('party state', pa.state)
-
+       
+       
 
         context = {
             'item': item,
             'parti': parti,
             'company': Company,
-            'pa': pa,
+            'p':parties,
+           
         }
 
         return render(request, 'company/create_sale.html', context)
@@ -2442,10 +4780,16 @@ def new_creditnote_item(request):
   
 
 def get_hsn_for_item(request):
-    selected_item = request.GET.get('item_name')
-    item = get_object_or_404(ItemModel, item_name=selected_item)
+ 
+  itmid = request.GET['id']
+  itm = ItemModel.objects.get(id=itmid)
+  hsn = itm.item_hsn
+  gst = itm.item_gst
+  igst = itm.item_igst
+  price = itm.item_purchase_price
+  qty = itm.item_current_stock
+  return JsonResponse({'hsn':hsn, 'gst':gst, 'igst':igst, 'price':price, 'qty':qty})
 
-    return JsonResponse({'hsn': item.item_hsn,'rate':item.item_sale_price})
 
 @login_required(login_url='login')
 def get_party_number(request):
@@ -2492,4 +4836,52 @@ def creditnote_list(request):
   return render(request,'company/creditlist.html')
 
 
+def party_dropdown(request):
+  sid = request.session.get('staff_id')
+  staff =  staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id)
+  part = party.objects.filter(company=cmp,user=cmp.user)
 
+  id_list = []
+  party_list = []
+  for p in part:
+    id_list.append(p.id)
+    party_list.append(p.party_name)
+
+  return JsonResponse({'id_list':id_list, 'party_list':party_list })
+
+
+
+def saveparty(request):
+  sid = request.session.get('staff_id')
+  staff =  staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id)
+
+  party_name = request.POST['name']
+  email = request.POST['email']
+  contact = request.POST['mobile']
+  state = request.POST['splystate']
+  address = request.POST['baddress']
+  gst_type = request.POST['gsttype']
+  gst_no = request.POST['gstin']
+  current_date = request.POST['partydate']
+  openingbalance = request.POST.get('openbalance')
+  payment = request.POST.get('paytype')
+  creditlimit = request.POST.get('credit_limit')
+  End_date = request.POST.get('enddate', None)
+  additionalfield1 = request.POST['add1']
+  additionalfield2 = request.POST['add2']
+  additionalfield3 = request.POST['add3']
+
+  part = party(party_name=party_name, gst_no=gst_no,contact=contact,gst_type=gst_type, state=state,address=address, email=email, openingbalance=openingbalance,
+                payment=payment,creditlimit=creditlimit,current_date=current_date,End_date=End_date,additionalfield1=additionalfield1,additionalfield2=additionalfield2,
+                additionalfield3=additionalfield3,company=cmp,user=cmp.user)
+  part.save() 
+  return JsonResponse({'success': True})
+
+
+
+
+
+
+    
