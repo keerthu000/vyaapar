@@ -225,6 +225,8 @@ urlpatterns = [
     path('creditnote_list',views.creditnote_list,name='creditnote_list'),
     path('party_dropdown',views.party_dropdown,name='party_dropdown'),
     path('saveparty',views.saveparty,name='saveparty'),
+    path('credit_bankdetails',views.credit_bankdetails,name='credit_bankdetails'),
+    path('add_creditnote',views.add_creditnote,name='add_creditnote'),
     
 
 
