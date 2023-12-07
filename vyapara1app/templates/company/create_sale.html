@@ -1,6 +1,6 @@
 {% extends 'company/src/html/base.html' %}
-{% load static %}
 {% block content %}
+{% load static %}
 
 <!-- Add Bootstrap CSS -->
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
@@ -172,7 +172,7 @@
                         <option >Select a Party</option>
                         {% for p in party %}
                          {% if p.cid_id == cmp.cid %}
-                           <option id="{{p.id}}"  data-state="{{ p.state }}">{{p.party_name}}</option>
+                           <option    value="{{p.id}}"  data-state="{{ p.state }}">{{p.party_name}}</option>
                          {% endif %}
                         {% endfor %}
                       </select>
@@ -201,15 +201,15 @@
 
               </div>
              
-              <div class="form-group mb-3  justify-content-end" style="margin-left:990px;margin-top:-20px;">
+              <div class="form-group mb-3  justify-content-end" style="margin-left:900px;margin-top:-20px;">
                 <label for="Return No">Return No.:</label>
                 <label for="Return No" name="creditno">{{credit_note}}</label>
               </div>
-              <div class="form-group  justify-content-end" style="margin-left:990px;margin-top:-10px;">
+              <div class="form-group  justify-content-end" style="margin-left:900px;margin-top:-10px;">
                 <label for="Invoice No">Invoice No.:</label>
                 <label for="Invoice No"></label>
               </div>
-              <div class="form-group  justify-content-end" style="margin-left:990px;margin-top:15px;">
+              <div class="form-group  justify-content-end" style="margin-left:900px;margin-top:15px;">
                 <div class="row mt-1" >
                   <div class="col-md-1">
                     <label for="date1">invoice Date:</label>
@@ -219,7 +219,7 @@
                   </div>
                 </div>
               </div>
-              <div class="form-group justify-content-end" style="margin-left: 990px; margin-top: 12px;">
+              <div class="form-group justify-content-end" style="margin-left: 900px; margin-top: 12px;">
                 <div class="row mt-1">
                   <div class="col-md-1">
                     <label for="date1">Date:</label>
@@ -229,10 +229,10 @@
                   </div>
                 </div>
               </div>
-              <label for="source of supply"></label>
-              <div class="form-group  justify-content-end" style="margin-left:990px;margin-top:12px;">
+          
+              <div class="form-group  justify-content-end" style="margin-left:900px;margin-top:12px;">
                 <div class="row mt-1" >
-                  <div class="col-md-3">
+                  <div class="col-md-4">
                     <label for="source of supply">State Of Supply:</label>
                  
                   </div>
@@ -241,7 +241,7 @@
                  
                   <input value="{{cmp.state}}" id="companystateValue" type="hidden">
                   <div class="col-md-2">
-                    <select name="destination" id="plosu" class="form-control bg-white text-dark" style="width:280px;margin-left:-150px;margin-top:12px;"  >
+                    <select name="destination" id="plosu" class="form-control bg-white text-dark" style="width:280px;margin-left:-210px;margin-top:12px;"  >
                       <option value="" selected hidden>Select</option>
                       <option value="State">State</option>
                       <option value="Other State">Other State</option>
@@ -1294,29 +1294,33 @@ document.getElementById('add').addEventListener('click', function () {
 
 
 
+
 <script type="text/javascript">
   $(document).ready(function () {
-      $("#partySelect").change(function () {
-          var party_id = $(this).val();
-          if (party_id) {
-              // Make an AJAX request to get the party's contact number
-              $.get('{% url "get_party_number" %}', { partyname: party_id })
-                  .then(function (data) {
-                      $("#partyPhoneNumber").val(data.phone);
-                  })
-                  .catch(function (error) {
-                      console.log("Error fetching party details:", error);
-                  });
-          }
-      });
-  });
+    $("#partySelect").change(function () {
+        var party_name = $(this).val();
+        if (party_name) {
+            // Make an AJAX request to get both the party's phone number and balance
+            $.get('{% url "get_party_number" %}', { partyname: party_name })
+                .then(function (data) {
+                    $("#partyPhoneNumber").val(data.phone);
+                    $("#ava_balance").text(data.balance);
+                })
+                .catch(function (error) {
+                    console.log("Error fetching party details:", error);
+                });
+        }
+    });
 
-  // Assuming you want to handle the button click as well
-  $(".add-party-btn").click(function () {
-      // Your button click logic here
-  });
+    // Assuming you want to handle the button click as well
+    $(".add-party-btn").click(function () {
+        // Your button click logic here
+    });
+});
+
 </script>
-<script type="text/javascript">
+
+{% comment %} <script type="text/javascript">
   $(document).ready(function () {
       $("#partySelect").change(function () {
           var party_id = $(this).val();
@@ -1337,7 +1341,7 @@ document.getElementById('add').addEventListener('click', function () {
   $(".add-party-btn").click(function () {
       // Your button click logic here
   });
-</script>
+</script> {% endcomment %}
 
 
 

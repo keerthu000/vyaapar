@@ -2072,6 +2072,7 @@ def create_purchasebill(request):
     staff = staff_details.objects.get(id=sid)
     cmp = company.objects.get(id=staff.company.id)    
     part = party.objects.get(id=request.POST.get('customername'))
+    print('part', part)
     pbill = PurchaseBill(party=part, 
                           billno=request.POST.get('bill_no'),
                           billdate=request.POST.get('billdate'),
@@ -4689,43 +4690,109 @@ def view_party(request,id):
 
 #********************************************keerthana***********************************************************
 
-@login_required(login_url='login')
-def sales_first(request):
-  return render(request,'company/salesfirst.html')
+ 
 
 @login_required(login_url='login')
 def create_sale(request):
+    
     userid = request.user.id 
 
-    try:
-        Company = company.objects.get(user=request.user.id)
-        item = ItemModel.objects.filter(user=userid)
-        print('company state', Company.state)
+    # try:
+    #     Company = company.objects.get(user=request.user.id)
+    #     item = ItemModel.objects.filter(user=userid)
+    #     print('company state', Company.state)
 
-        # Using filter instead of get to handle multiple party objects
-        parti = party.objects.filter(user=request.user.id)
-        parties = party.objects.filter(company=Company)
+    #     # Using filter instead of get to handle multiple party objects
+    #     parti = party.objects.filter(user=request.user.id)
+    #     parties = party.objects.filter(company=Company)
 
 
-        # Assuming you want to display the state of the first party if multiple
+    sid = request.session.get('staff_id')
+    staff =  staff_details.objects.get(id=sid)
+    cmp = company.objects.get(id=staff.company.id)
+    Party = party.objects.filter(company=cmp,user=cmp.user)
+    bank = BankModel.objects.filter(company=cmp,user=cmp.user)
+    allmodules= modules_list.objects.get(company=staff.company,status='New')
+    last_credit = CreditNote.objects.filter(company=cmp).count()
+
+    if last_credit:
+      credit_note = last_credit + 1 
+    else:
+      credit_note = 1
+
+    item = ItemModel.objects.filter(company=cmp,user=cmp.user)
+    item_units = UnitModel.objects.filter(user=cmp.user,company=staff.company)
+            
        
-       
 
-        context = {
-            'item': item,
-            'parti': parti,
-            'company': Company,
-            'p':parties,
-           
-        }
+      
+    context = {'staff':staff, 'allmodules':allmodules, 'party':Party, 'cmp':cmp,'credit_note':credit_note,  'item':item, 'item_units':item_units,'bank':bank}
+    return render(request, 'company/create_sale.html', context)
 
-        return render(request, 'company/create_sale.html', context)
+def add_creditnote(request):
+  if request.method == 'POST':
+    sid = request.session.get('staff_id')
+    staff = staff_details.objects.get(id=sid)
+    cmp = company.objects.get(id=staff.company.id)    
+    party_id = request.POST.get('partyname')
+    print(party_id)
+    part = party.objects.get(id=party_id)
+    return_no=request.POST.get('creditno')
+    partmob=request.POST.get('partyPhoneNumber')
+    creditdate=request.POST.get('date1')
+    invoice_date=request.POST.get('inv_date')
+    supplyplace =request.POST.get('destination')
+    pay_method=request.POST.get("payment_method")
+    cheque_no=request.POST.get("cheque_id")
+    upi_no=request.POST.get("upi_id")
+    bank_acc=request.POST.get("bnk_id")
+    advance = request.POST.get("advance")
+    balance = request.POST.get("balance")
+    subtotal=float(request.POST.get('subtotal'))
+    igst = request.POST.get('igst')
+    cgst = request.POST.get('cgst')
+    sgst = request.POST.get('sgst')
+    adjust = request.POST.get("adj")
+    taxamount = request.POST.get("taxamount")
+    grandtotal=request.POST.get('grandtotal')
+    descptn=request.POST.get('description')
+    creditnote=CreditNote(party=part,retrn_no = return_no,partymob=partmob,date=creditdate,invoice_date=invoice_date,
+                          supplyplace=supplyplace,pay_method=pay_method,cheque_no=cheque_no,upi_no=upi_no,
+                          bankaccount=bank_acc, subtotal=subtotal,advance=advance, balance=balance, igst=igst,
+                          cgst=cgst,sgst=sgst,adjust=adjust,taxamount=taxamount,grandtotal=grandtotal, description=descptn,
+                          company=cmp,staff=staff,)
+    
+    creditnote.save()
+    
+    product = tuple(request.POST.getlist("product[]"))
+    qty =  tuple(request.POST.getlist("qty[]"))
+    rate=tuple(request.POST.getlist("price[]"))
+    discount =  tuple(request.POST.getlist("discount[]"))
+    if request.POST.get('placosupply') =='State':
+      tax =  tuple(request.POST.getlist("tax1[]"))
+    else:
+      tax =  tuple(request.POST.getlist("tax2[]"))
+    total =  tuple(request.POST.getlist("total[]"))
+    return_no = CreditNote.objects.filter(retrn_no=creditnote.retrn_no, company=cmp).first()
 
-    except company.DoesNotExist:
-        # Handle the case where the company does not exist
-        return HttpResponse("Company does not exist.")
+
+    if len(product)==len(qty)==len(tax)==len(discount)==len(total):
+      mapped=zip(product,qty,tax,discount,total)
+      mapped=list(mapped)
+      for ele in mapped:
+        itm = ItemModel.objects.get(id=ele[0])
+        CreditNoteItem.objects.create(product = itm,qty=ele[1], tax=ele[2],discount=ele[3],total=ele[4],creditnote=return_no,company=cmp)
+
+    
+    CreditNote.objects.filter(company=cmp).update(tot_credit_no=F('tot_credit_no') + 1)
+    
+    creditnote.tot_credit_no = creditnote.retrn_no
+    creditnote.save()
+
+  return render(request,'company/create_sale.html')
 
 
+  
 @login_required(login_url='login')
 def new_creditnote_item(request):
   print('items')
@@ -4793,47 +4860,42 @@ def get_hsn_for_item(request):
 
 @login_required(login_url='login')
 def get_party_number(request):
-    selected_party = request.GET.get('partyname')
-    party_instance = get_object_or_404(party, party_name=selected_party)
+    selected_party_id = request.GET.get('partyname')
+    party_instance = get_object_or_404(party, id=selected_party_id)
     phone_number = party_instance.contact
+    party_id = party_instance.id
+    balnce =party_instance.openingbalance
     
-    return JsonResponse({'phone': phone_number})
-@login_required(login_url='login')
-def get_party_balance(request):
-    selected_party = request.GET.get('partyname')
-    party_instance = get_object_or_404(party, party_name=selected_party)
-    balnce = party_instance.openingbalance
-    return JsonResponse({'balance':balnce})
+    return JsonResponse({'phone': phone_number, 'id': party_id,'balance':balnce})
+
 
 # @login_required(login_url='login')
-# def state_supply(request):
-#     try:
-#         company_instance = company.objects.get(user=request.user.id)
-#         party_instance = party.objects.get(user=request.user.id)
+# def get_party_balance(request):
+#     selected_party = request.GET.get('partyname')
+#     party_instance = get_object_or_404(party, party_name=selected_party)
+#     balnce = party_instance.openingbalance
+#     return JsonResponse({'balance':balnce})
 
-#         company_state = company_instance.state
-#         print('company_state', company_state)
-#         party_state = party_instance.state
-#         print('party_state', party_state)
-
-#         is_same_state = company_state == party_state
-#         print('is_same_state',is_same_state)
-#     except (company.DoesNotExist, party.DoesNotExist):
-#         # Handle the case where the company or party does not exist
-#         is_same_state = False
-
-#     context = {
-#         'is_same_state': is_same_state,
-#         # Other context variables if needed
-#     }
-
-#     return render(request, 'company/create_sale.html', context)
-
+# 
 
 @login_required(login_url='login')
 def creditnote_list(request):
+  sid = request.session.get('staff_id')
+  staff =  staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id)
+  allmodules= modules_list.objects.get(company=cmp,status='New')
+  Part = party.objects.filter(company=cmp,user=cmp.user)
+  credit = CreditNote.objects.filter(company=cmp)
 
-  return render(request,'company/creditlist.html')
+  if not credit:
+    context = {'staff':staff, 'allmodules':allmodules,'party':Part}
+    return render(request,'company/salesfirst.html',context)
+  
+  context = {'staff':staff,'allmodules':allmodules,'credit':credit,'party':Part}
+  return render(request,'company/creditlist.html',context)
+
+
+
 
 
 def party_dropdown(request):
@@ -4878,6 +4940,21 @@ def saveparty(request):
                 additionalfield3=additionalfield3,company=cmp,user=cmp.user)
   part.save() 
   return JsonResponse({'success': True})
+
+
+
+def credit_bankdetails(request):
+  bid = request.POST['id']
+  bank = BankModel.objects.get(id=bid) 
+  bank_no = bank.account_num
+  bank_name = bank.bank_name
+  return JsonResponse({'bank_no':bank_no,'bank_name':bank_name})
+
+
+
+
+
+
 
 
 

@@ -1,0 +1,107 @@
+{% extends 'company/src/html/base.html' %}
+{% block content %}
+{% load static %}
+
+
+
+
+<div class="fixed-top" style="top: 9rem; margin-left: 18rem; margin-top: 10px;height: 1000vh;">
+    <div class="row pt-0 m-0">
+    
+        <div class="card p-0 bg-light bs"><br>
+            <div class="row">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-3" style="margin-left: 5vh;">
+                            <div class="form-group">
+                                <label for="fromDate" style="color: black; margin-bottom: 1vh;">From Date:</label>
+                                <input type="date" class="form-control h-100 border-secondary" id="fromDate" style="color: black; background-color: white;" onchange="filterDates()"> 
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="toDate" style="color: black; margin-bottom: 1vh;">To Date:</label>
+                                <input type="date" class="form-control h-100 border-secondary" id="toDate" style="color: black; background-color: white;" onchange="filterDates()">
+                            </div>
+                        </div>
+                        <div class="col-md-2"></div>
+                        <div class="col-md-2 text-right" style="margin-left: 3vh;">
+                            <button class="btn mt-2" type="button" onclick="ExportToExcel()" style="margin-right: 1vh; margin-left: 24vh;margin-bottom:-13vh;">
+                                <span><img width="18px" src="{% static 'assets/excel2.png' %}" alt="no img"></span>
+                                <br><span style="color: black; font-size: small; font-weight: bold;">Excel</span>
+                            </button>
+        
+                            <button class="btn mt-2" type="button" onclick="printfunction()" style="margin-right: 2vh;">
+                                <span><img width="20px" src="{% static 'images/printer.jpeg' %}" alt="no img"></span>
+                                <br><span style="color: black; font-size: small; font-weight: bold;">Print</span>
+                            </button>
+        
+                            <button class="btn mt-2" type="button" data-toggle="modal" data-target="#excelModal" onclick="excelmodel()">
+                                <span><img width="20px" src="{% static 'images/import.png' %}" alt="no img"></span>
+                                <br><span style="color: black; font-size: small; font-weight: bold;">Import</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div><br>
+        </div>
+    </div>
+
+    <div style="margin-left:30px;"><h1 class="text-dark">All Credit Note</h1></div><br><br>
+
+        <div class="row">
+            <div class="col-md-4">
+                <input id="search_input" style="padding-inline-start: 2rem; margin-left: 1vh; " class="w-100 border-secondary text-dark pt-1 pb-1 pe-1 rounded" type="text" placeholder=" Search">
+            </div>
+            <div class="col-md-6"></div>
+            <div class="col-md-2">
+                <a class="btn btn-primary bg-gradient" href="{% url 'create_sale' %}" style="color: white;"> 
+                    <i class="fa fa-plus border-dark " aria-hidden="true" style="color: white;"></i> &nbsp;Add Credit Note
+                </a>
+            </div>
+        </div>
+    <div style="margin-top:50px;">
+
+        <div class="table-responsive" style="margin-left: 20px; margin-right: 40px;">
+            <table class="table align-middle mb-0 bg-white">
+                <thead class="bg-info">
+                <tr class="text-light">
+                    <th>#</th>
+                    <th>DATE</th>
+                    <th>REF.NO.</th>
+                    <th>PARTY NAME</th>
+                    <th> PAYMENT TYPE</th>
+                    <th> AMOUNT</th>
+                    <th>BALANCE</th>
+                    <th> ACTION</th>
+                </tr>
+                </thead>
+                <tbody>
+                    {% for c in credit %}
+                <tr>
+                    <td  class="clickable-row" style="color: black;" data-href="#">{{forloop.counter}}</td>
+                    <td class="clickable-row" style="color: black;" data-href="#">{{c.date| date:'d-m-Y'}}</td>
+                    <td class="clickable-row" style="color: black;" data-href="#">{{c.retrn_no}}</td>
+                    <td class="clickable-row" style="color: black;" data-href="#">{{c.party.party_name}}</td>
+                    <td class="clickable-row" style="color: black;" data-href="#">{{c.pay_method}}</td>
+                    
+                    <td class="clickable-row" style="color: black;" data-href="#">{{c.subtotal}}</td>
+                    <td class="clickable-row" style="color: black;" data-href="#">{{c.balance}}</td>
+                    <td class="clickable-row" style="color: black;" data-href="#">{{c.retrn_no}}</td>
+                    
+                    
+
+                    
+
+
+                
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+{% endblock  %}
