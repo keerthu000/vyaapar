@@ -1,14 +1,100 @@
 {% extends 'company/src/html/base.html' %}
 {% block content %}
 {% load static %}
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+<style>
 
 
+    #billtable tbody{
+        cursor: pointer;
+    }
 
+    #emptyMessage {
+        display: none;
+        font-size: x-large;
+        font-weight: bold;
+        color: red;
+    }
 
-<div class="fixed-top" style="top: 9rem; margin-left: 18rem; margin-top: 10px;height: 1000vh;">
-    <div class="row pt-0 m-0">
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        border-radius: 5px;
+        padding: 10px;
+        z-index: 1;
+        width: 15%;
+    }
+
+    .dropdown-content label {
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .dropdown-content input {
+        width: 100%;
+        padding: 5px;
+        box-sizing: border-box;
+        margin-bottom: 10px;
+    }
+    @media print{
+        body{
+            visibility: hidden !important; /* hide everything in body when in print mode*/
+        }
+
+        .printContainer {
+            visibility: visible !important; /* Override the rule above to only show the printables*/
+            position: absolute;
+            z-index: 99999;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            font-size: large;
+        } 
+
+        #calcdiv{
+            visibility: visible;
+            margin-top: -30vh;
+            margin-left: -9vh;
+            margin-bottom: 30vh;
+        }
+
+        #billtable{
+            margin-top: 20vh;
+            margin-bottom: 20vh;
+        }
+
+        #billtable th{
+            font-size: medium;
+        }
+
+        .extra{
+            display: none;
+        }
+    }
     
-        <div class="card p-0 bg-light bs"><br>
+    ::-webkit-scrollbar{
+        display: none
+    }
+    .div_continer{
+        overflow-y: scroll;
+       
+    }
+</style>
+
+
+<div class="div_continer" style=" margin-left: 18rem; height: 1000vh;">
+    <div class="row pt-0 m-0" >
+    
+        <div class="card p-0 bg-light bs" style="margin-top:70px;"><br>
             <div class="row">
                 <div class="container">
                     <div class="row">
@@ -49,7 +135,7 @@
 
     <div style="margin-left:30px;"><h1 class="text-dark">All Credit Note</h1></div><br><br>
 
-        <div class="row">
+        <div class="row" >
             <div class="col-md-4">
                 <input id="search_input" style="padding-inline-start: 2rem; margin-left: 1vh; " class="w-100 border-secondary text-dark pt-1 pb-1 pe-1 rounded" type="text" placeholder=" Search">
             </div>
@@ -60,20 +146,94 @@
                 </a>
             </div>
         </div>
-    <div style="margin-top:50px;">
+    <div style="margin-top:50px;                   ">
 
-        <div class="table-responsive" style="margin-left: 20px; margin-right: 40px;">
-            <table class="table align-middle mb-0 bg-white">
+        <div class="table-responsive" style="margin-left: 20px; margin-right: 40px;" id="tablediv">
+            <table class="table align-middle mb-0 bg-white table-striped">
                 <thead class="bg-info">
-                <tr class="text-light">
-                    <th>#</th>
-                    <th>DATE</th>
-                    <th>REF.NO.</th>
-                    <th>PARTY NAME</th>
-                    <th> PAYMENT TYPE</th>
-                    <th> AMOUNT</th>
-                    <th>BALANCE</th>
-                    <th> ACTION</th>
+                <tr class="text-light" style="color:black;">
+                    <th  class="bg-secondary text-white" >#</th>
+                    <th class="bg-secondary text-white">
+                        DATE 
+                        <a class="extra text-white" onclick="toggleDropdown(0)">&nbsp;<i class="fa fa-filter" aria-hidden="true"></i></a>
+                        <div class="dropdown-content" id="dropdownContent0">
+                            <label for="filterInput0" style="color: black; text-align: left;">Equal To</label>
+                            <input type="date" id="filterInput0"  />
+                            <a class="btn btn-info" onclick="cleardropdown(0)">Clear</a> 
+                            &nbsp;<a class="btn btn-info" onclick="filterTable(0)">Apply</a>
+                        </div>
+                    </th>
+                    <th class="bg-secondary text-white">
+                        REF.NO 
+                        <a class="extra text-white" onclick="toggleDropdown(1)">&nbsp;<i class="fa fa-filter" aria-hidden="true"></i></a>
+                        <div class="dropdown-content" id="dropdownContent1">
+                            <label for="filterInput1" style="color: black; text-align: left;">Equal To</label>
+                            <input type="text" id="filterInput1"  />
+                            <a class="btn btn-info" onclick="cleardropdown(1)">Clear</a> 
+                            &nbsp;<a class="btn btn-info" onclick="filterTable(1)">Apply</a>
+                        </div>
+                    </th>
+                    <th class="bg-secondary text-white">
+                        PARTY NAME 
+                        <a class="extra text-white" onclick="toggleDropdown(2)">&nbsp;<i class="fa fa-filter" aria-hidden="true"></i></a>
+                        <div class="dropdown-content" id="dropdownContent2">
+                            <label for="filterInput2" style="color: black; text-align: left;">Equal To</label>
+                            <input type="text" id="filterInput2"  />
+                            <a class="btn btn-info" onclick="cleardropdown(2)">Clear</a> 
+                            &nbsp;<a class="btn btn-info" onclick="filterTable(2)">Apply</a>
+                        </div>
+                    </th>
+                    <th class="bg-secondary text-white">
+                        PAYMENT TYPE
+                        <a class="extra text-white" onclick="toggleDropdown(3)">&nbsp;<i class="fa fa-filter" aria-hidden="true"></i></a>
+                        <div class="dropdown-content" id="dropdownContent3">
+                            <label for="filterInput3" style="color: black; text-align: left;">Equal To</label>
+                            <input type="text" id="filterInput3"  />
+                            <a class="btn btn-info" onclick="cleardropdown(3)">Clear</a> 
+                            &nbsp;<a class="btn btn-info" onclick="filterTable(3)">Apply</a>
+                        </div>
+                    </th>
+                    <th class="bg-secondary text-white">
+                        AMOUNT
+                        <a class="extra text-white" onclick="toggleDropdown(4)">&nbsp;<i class="fa fa-filter" aria-hidden="true"></i></a>
+                        <div class="dropdown-content" id="dropdownContent4">
+                            <label for="filterInput4" style="color: black; text-align: left;">Equal To</label>
+                            <input type="text" id="filterInput4" />
+                            <a class="btn btn-info" onclick="cleardropdown(4)">Clear</a> 
+                            &nbsp;<a class="btn btn-info" onclick="filterTable(4)">Apply</a>
+                        </div>
+                    </th>
+                    <th class="bg-secondary text-white">
+                        BALANCE
+                        <a class="extra text-white" onclick="toggleDropdown(5)">&nbsp;<i class="fa fa-filter" aria-hidden="true"></i></a>
+                        <div class="dropdown-content" id="dropdownContent5">
+                            <label for="filterInput5" style="color: black; text-align: left;">Equal To</label>
+                            <input type="text" id="filterInput5" />
+                            <a class="btn btn-info" onclick="cleardropdown(5)">Clear</a> 
+                            &nbsp;<a class="btn btn-info" onclick="filterTable(5)">Apply</a>
+                        </div>
+                    </th>
+                    <th class="bg-secondary text-white extra">
+                        ACTION
+                        &nbsp; <a onclick="toggleDropdown(6)"><i class="fa fa-filter" aria-hidden="true"></i></a>
+                        <div class="dropdown-content" id="dropdownContent6">
+                            <label for="filterInput6" style="color: black; text-align: left;">Equal To</label>
+                            <input type="text" id="filterInput6" />
+                            <a class="btn btn-info" onclick="cleardropdown(6)">Clear</a> 
+                            &nbsp;<a class="btn btn-info" onclick="filterTable(6)">Apply</a>
+                        </div>
+                    </th>
+                    <th class="bg-secondary text-white extra">
+                        BY
+                        &nbsp; <a onclick="toggleDropdown(7)"><i class="fa fa-filter" aria-hidden="true"></i></a>
+                        <div class="dropdown-content" id="dropdownContent7">
+                            <label for="filterInput7" style="color: black; text-align: left;">Equal To</label>
+                            <input type="text" id="filterInput7" />
+                            <a class="btn btn-info" onclick="cleardropdown(7)">Clear</a> 
+                            &nbsp;<a class="btn btn-info" onclick="filterTable(7)">Apply</a>
+                        </div>
+                    </th>
+                    <th class="bg-secondary text-white extra"></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -88,20 +248,391 @@
                     <td class="clickable-row" style="color: black;" data-href="#">{{c.subtotal}}</td>
                     <td class="clickable-row" style="color: black;" data-href="#">{{c.balance}}</td>
                     <td class="clickable-row" style="color: black;" data-href="#">{{c.retrn_no}}</td>
-                    
-                    
-
-                    
-
-
+                    <td class="pt-3 m-0 extra">
+                        <div class="btn-group">
+                            <button style="border: none;background: none;" type="button" class="ropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="fa fa-ellipsis-v text-dark fs-1 ps-"></span>
+                            </button>
+                            <ul class="dropdown-menu">
+                              <li><a class="dropdown-item fw-bold tb hide_table_text_v" href=""><span class="fa fa-eye pe-2 tg"></span> View </a></li>
+                              <li><a class="dropdown-item fw-bold tb hide_table_text_v" href=""><span class="fa fa-edit pe-2 tj"></span> Edit</a></li>
+                              <li><a class="dropdown-item fw-bold tb hide_table_text_v" href=""><span class="fa fa-history pe-2 th"></span> History</a></li>
+                              <li><a class="dropdown-item fw-bold tb hide_table_text_d" onclick="deletepbill('{{p.id}}')"><span class="fa fa-trash-alt tr" style="padding-inline-start: 0.1rem;padding-inline-end:0.7rem ;"></span> Delete</a></li>
+                            </ul>
+                        </div>
+                    </td>
+                    <td style="color: black;" hidden>{{p.advance}}</td>
                 
                 </tr>
                 {% endfor %}
                 </tbody>
             </table>
+            
+            <p id="emptyMessage" style="text-align: center;">
+                <br><br><br>
+                No Transactions to Show
+            </p>
+            <table id="excelbilltable" hidden>
+                <thead >
+                    <tr class="fs-2 tb" >
+                        <th> DATE </th>
+                        <th> BILL NO </th>
+                        <th> PARTY NAME </th>
+                        <th> PAYMENT TYPE </th>
+                        <th> AMOUNT </th>
+                        <th> BALANCE </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in pbill %}
+                    <tr>
+                        <td>{{p.billdate | date:'d-m-Y'}}</td>
+                        <td>{{p.billno}}</td>
+                        <td>{{p.party.party_name}}</td>
+                        <td>{{p.pay_method}}</td>
+                        <td>{{p.grandtotal}}</td>
+                        <td>{{p.balance}}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <table id="billtablemodel" hidden>
+                <thead>
+                    <tr>
+                        <th>Customer Name</th>
+                        <th>Customer Email</th>
+                        <th>Bill Date</th>
+                        <th>Supply State</th>
+                        <th>Payment Method</th>
+                        <th>Payment No</th>
+                        <th>Adjustment</th>
+                        <th>Advance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>State/Other State</td>
+                        <td>Cash/Cheque/UPI/Bank Name</td>
+                        <td>Cheque ID/UPI ID/Bank no</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <table id="billtableitemmodel" hidden>
+                <thead>
+                    <tr>
+                        <th>Purchase Bill</th>
+                        <th>Product Name</th>
+                        <th>Product HSN</th>
+                        <th>Quantity</th>
+                        <th>Tax</th>
+                        <th>Discount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Corresponding Row no from PurchaseBillModel </td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>GST_[_%]/IGST_[_%]</td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+</div>
+
+
+
+<div class="modal" id="excelModal" tabindex="-1" role="dialog" aria-labelledby="excelModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="excelModalLabel">Upload File
+                <label for="" style="color: red; font-size: x-small;" >* Refer Downloaded Sheet For Format </label><br></h5>
+                <button type="button" class="btn close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" style="font-size: x-large;">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="excelForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="file" style="color: black;">Choose Excel File for Purchase Bill- </label> <br>
+                        <input type="file" class="form-control-file" id="billfile" name="billfile" accept=".xls, .xlsx"><br><br>
+                        
+
+                        <label for="file" style="color: black;">Choose Excel File for Purchase Bill Products- </label> <br>
+                        <input type="file" class="form-control-file" id="prdfile" name="prdfile" accept=".xls, .xlsx"><br>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="uploadFile()" data-dismiss="modal">Upload</button>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+    $(document).ready(function() {
+        var table = document.getElementById("billtable");
+        var rows = table.getElementsByTagName("tr");
+        for (var i = 1; i < rows.length; i++) {
+            var bankid = rows[i].getElementsByTagName("td")[3].innerText;
+            if(bankid != 'Cash' && bankid != 'Cheque' && bankid != 'UPI'){
+                changetobankname(i,bankid)
+            }
+        }
+
+        function changetobankname(rowid,bankid){
+            $.ajax({
+                type : 'POST',
+                url: "{% url 'credit_bankdetails' %}",
+                data: {
+                    id: bankid,
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                },
+                success: function(data){
+                    rows[rowid].getElementsByTagName("td")[3].innerText=data.bank_name
+                }
+            });
+        }
+    });
+
+    $(document).ready(function() {
+        var table = document.getElementById("excelbilltable");
+        var rows = table.getElementsByTagName("tr");
+        for (var i = 1; i < rows.length; i++) {
+            var bankid = rows[i].getElementsByTagName("td")[3].innerText;
+            if(bankid != 'Cash' && bankid != 'Cheque' && bankid != 'UPI'){
+                changetobankname(i,bankid)
+            }
+        }
+
+        function changetobankname(rowid,bankid){
+            $.ajax({
+                type : 'POST',
+                url: "{% url 'credit_bankdetails' %}",
+                data: {
+                    id: bankid,
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                },
+                success: function(data){
+                    rows[rowid].getElementsByTagName("td")[3].innerText=data.bank_name
+                }
+            });
+        }
+    });
+</script>
+
+<script>
+    function cleardropdown(index){
+        if(index == 0){
+            document.getElementById('filterInput'+index).value = '';
+        }else{
+            document.getElementById('filterInput'+index).value = null;
+        }
+    }
+
+    function toggleDropdown(index) {
+        var dropdownContent = document.getElementById('dropdownContent' + index);
+        var isVisible = dropdownContent.style.display === 'block';
+        var allDropdowns = document.querySelectorAll('.dropdown-content');
+        allDropdowns.forEach(function (dropdown) {
+            dropdown.style.display = 'none';
+        });
+        dropdownContent.style.display = isVisible ? 'none' : 'block';
+    }
+
+    function filterTable(index) {
+        var input;
+        document.getElementById('dropdownContent' + index).style.display = 'none';
+        if (index === 0) {
+            input = document.getElementById('filterInput' + index).value;
+        } else {
+            input = document.getElementById('filterInput' + index).value.toUpperCase();
+        }
+        var table = document.getElementById('billtable');
+        var rows = table.getElementsByTagName('tr');
+        var emptyMessage = document.getElementById('emptyMessage');
+        var isEmpty = true;
+        for (var i = 1; i < rows.length; i++) {
+            var cells = rows[i].getElementsByTagName('td');
+            var cell = cells[index];
+            if (cell) {
+                var textValue = cell.textContent || cell.innerText;
+                if (index === 0) {
+                    if (input==''){
+                        rows[i].style.display = 'table-row';
+                            isEmpty = false;
+                    }else{
+                        dateval  = textValue.replace(/(\d{2})-(\d{2})-(\d{2})/, "$2-$1-$3");
+                        inputval  = input.replace(/(\d{2})-(\d{2})-(\d{2})/, "$2-$1-$3");
+                        const formattedDate = formatDateString(input);
+                        if (dateval === formattedDate) {
+                            rows[i].style.display = 'table-row';
+                            isEmpty = false;
+                        } else {
+                            rows[i].style.display = 'none';
+                        }
+                    }
+                } else {
+                    if (textValue.toUpperCase().includes(input)) {
+                        rows[i].style.display = 'table-row';
+                        isEmpty = false;
+                    } else {
+                        rows[i].style.display = 'none';
+                    }
+                }
+            }
+        }
+        emptyMessage.style.display = isEmpty ? 'block' : 'none';
+        calculatetotal()
+    }
+
+    function formatDateString(inputDate) {
+        const parsedDate = new Date(inputDate);
+        const day = parsedDate.getDate();
+        const month = parsedDate.getMonth() + 1;
+        const year = parsedDate.getFullYear();
+        const formattedDate = `${month < 10 ? '0' : ''}${month}-${day < 10 ? '0' : ''}${day}-${year}`;
+        return formattedDate;
+    }
+</script>
+
+<script>
+    function printfunction(){
+        print4 = document.getElementById('tablediv')
+        if (print4.style.display !== 'none'){
+            var printContents = document.getElementById("tablediv").innerHTML;
+        }else{
+            var printContents = document.getElementById("whatToPrint").innerHTML;
+        }
+        var $printerDiv = $('<div class="printContainer" id=printContainer></div>');
+        $printerDiv.html(printContents); 
+        $('body').append($printerDiv).addClass("printingContent"); 
+        var h1Element = document.createElement("h1");
+        h1Element.textContent = "Creditnote Bill";
+        var head = document.getElementById("printContainer");
+        head.insertBefore(h1Element, head.firstChild);
+        window.print();
+        $printerDiv.remove();
+        $('body').removeClass("printingContent");
+    }
+</script>
+
+
+<script>
+    function uploadFile() {
+        const form = document.getElementById('excelForm');
+        const formData = new FormData(form);
+        fetch('import_purchase_bill', {
+            method: 'POST',
+            body: formData
+        })
+        .then(data => {
+            swal({
+                title: "Imported !",
+                text: "Purchase Bill Import Successfull!",
+                icon: "success",
+                buttons: false,
+            })
+        })
+        .then(response => {
+            setTimeout(function () {
+                location.reload();
+            }, 1250);
+        })
+        .catch(error => {
+            swal({
+                title: "Error !",
+                text: "Purchase Bill Import Unuccessfull!",
+                icon: "warning",
+                buttons: false,
+            })
+        });
+    }
+</script>
+
+
+
+<script>
+    calculatetotal()
+
+    function calculatetotal(){
+        var table = document.getElementById('billtable');
+        var rows = table.getElementsByTagName('tr');
+        tpaid = 0;
+        tunpaid = 0;
+        ttotal = 0; 
+        for (var i = 1; i < rows.length; i++) {
+            if(rows[i].style.display !='none'){
+                var pcells = rows[i].getElementsByTagName('td')[9];
+                var ptextValue = pcells.textContent || pcells.innerText;
+                tpaid += parseFloat(ptextValue)
+
+                var ucells = rows[i].getElementsByTagName('td')[5];
+                var utextValue = ucells.textContent || ucells.innerText;
+                tunpaid += parseFloat(utextValue)
+
+                var tcells = rows[i].getElementsByTagName('td')[4];
+                var ttextValue = tcells.textContent || tcells.innerText;
+                ttotal += parseFloat(ttextValue)
+            }
+        }
+        document.getElementById('paidval').textContent = tpaid
+        document.getElementById('unpaidval').textContent = tunpaid
+        document.getElementById('totalval').textContent = ttotal
+    }
+</script>
+<script>
+    function filterDates() {
+        var fromDate = document.getElementById("fromDate").value;
+        var selectedDate = new Date(fromDate);
+        selectedDate.setDate(selectedDate.getDate() - 1);
+        var toDate = document.getElementById("toDate").value;
+        var table = document.getElementById("billtable");
+        var rows = table.getElementsByTagName("tr");
+        var emptyMessage = document.getElementById('emptyMessage');
+        var isEmpty = true;
+        for (var i = 1; i < rows.length; i++) {
+            var currentDate = rows[i].getElementsByTagName("td")[0].innerText;
+            var date = new Date(currentDate.replace(/(\d{2})-(\d{2})-(\d{2})/, "$2/$1/$3"));
+            if ((fromDate && date >= selectedDate) || !fromDate) {
+                if ((toDate && date <= new Date(toDate)) || !toDate) {
+                    rows[i].style.display = "table-row";
+                    isEmpty = false;
+                } else {
+                    rows[i].style.display = "none";
+                }
+            } else {
+                rows[i].style.display = "none";
+            }
+        }
+        emptyMessage.style.display = isEmpty ? 'block' : 'none';
+        calculatetotal()
+    }
+</script>
+
+<script>
+    jQuery(document).ready(function($) {
+        $(".clickable-row").click(function() {
+            window.location = $(this).data("href");
+        });
+    });
+</script>
+
 
 
 {% endblock  %}
