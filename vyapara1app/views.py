@@ -21,6 +21,13 @@ from django.template.loader import get_template
 from xhtml2pdf import pisa
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
+from django.core.mail import send_mail, EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from django.conf import settings
+from io import BytesIO
+from xhtml2pdf import pisa
+
 
 
 # Create your views here.
@@ -4694,25 +4701,16 @@ def view_party(request,id):
 
 @login_required(login_url='login')
 def create_sale(request):
-    
-    userid = request.user.id 
-
-    # try:
-    #     Company = company.objects.get(user=request.user.id)
-    #     item = ItemModel.objects.filter(user=userid)
-    #     print('company state', Company.state)
-
-    #     # Using filter instead of get to handle multiple party objects
-    #     parti = party.objects.filter(user=request.user.id)
-    #     parties = party.objects.filter(company=Company)
-
-
+    toda = date.today()
+    tod = toda.strftime("%Y-%m-%d")
+   
     sid = request.session.get('staff_id')
     staff =  staff_details.objects.get(id=sid)
     cmp = company.objects.get(id=staff.company.id)
     Party = party.objects.filter(company=cmp,user=cmp.user)
     bank = BankModel.objects.filter(company=cmp,user=cmp.user)
     allmodules= modules_list.objects.get(company=staff.company,status='New')
+    
     last_credit = CreditNote.objects.filter(company=cmp).count()
 
     if last_credit:
@@ -4726,7 +4724,7 @@ def create_sale(request):
        
 
       
-    context = {'staff':staff, 'allmodules':allmodules, 'party':Party, 'cmp':cmp,'credit_note':credit_note,  'item':item, 'item_units':item_units,'bank':bank}
+    context = {'staff':staff, 'allmodules':allmodules, 'party':Party, 'cmp':cmp,'credit_note':credit_note,'tod':tod,'item':item, 'item_units':item_units,'bank':bank}
     return render(request, 'company/create_sale.html', context)
 
 def add_creditnote(request):
@@ -4788,6 +4786,7 @@ def add_creditnote(request):
     
     creditnote.tot_credit_no = creditnote.retrn_no
     creditnote.save()
+    return redirect('creditnote_list')
 
   return render(request,'company/create_sale.html')
 
@@ -4945,10 +4944,233 @@ def saveparty(request):
 
 def credit_bankdetails(request):
   bid = request.POST['id']
-  bank = BankModel.objects.get(id=bid) 
-  bank_no = bank.account_num
+  bank = BankModel.objects.filter(id=bid) 
+  bank_no = bank.account_num 
   bank_name = bank.bank_name
   return JsonResponse({'bank_no':bank_no,'bank_name':bank_name})
+
+
+
+def detail_creditnote(request,id):
+  sid = request.session.get('staff_id')
+  staff = staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id) 
+  allmodules = modules_list.objects.get(company=staff.company,status='New')
+  credit = CreditNote.objects.get(id=id,company=cmp)
+  citm = CreditNoteItem.objects.filter(creditnote=credit,company=cmp)
+  dis = 0
+  for itm in citm:
+    dis += int(itm.discount)
+  itm_len = len(citm)
+
+  context={'staff':staff,'allmodules':allmodules,'credit':credit,'citm':citm,'itm_len':itm_len,'dis':dis}
+  return render(request,'company/purchasebilldetails.html',context)
+
+
+
+# def creditnotehistory(request):
+#   pid = request.POST['id']
+#   sid = request.session.get('staff_id')
+#   staff = staff_details.objects.get(id=sid)
+#   cmp = company.objects.get(id=staff.company.id) 
+#   credit = CreditNote.objects.get(no=pid,company=cmp)
+#   hst = CreditNoteTransactionHistory.objects.filter(creditnote=credit,company=cmp).last()
+#   name = hst.staff.first_name + ' ' + hst.staff.last_name 
+#   action = hst.action
+#   return JsonResponse({'name':name,'action':action,'pid':pid})
+
+def import_creditnote(request):
+  if request.method == 'POST' and request.FILES['billfile']  and request.FILES['prdfile']:
+    sid = request.session.get('staff_id')
+    staff =  staff_details.objects.get(id=sid)
+    cmp = company.objects.get(id=staff.company.id)
+    totval = int(CreditNote.objects.filter(company=cmp).last().tot_bill_no) + 1
+
+    excel_bill = request.FILES['billfile']
+    excel_b = load_workbook(excel_bill)
+    eb = excel_b['Sheet1']
+    excel_prd = request.FILES['prdfile']
+    excel_p = load_workbook(excel_prd)
+    ep = excel_p['Sheet1']
+
+    for row_number1 in range(2, eb.max_row + 1):
+      billsheet = [eb.cell(row=row_number1, column=col_num).value for col_num in range(1, eb.max_column + 1)]
+      part = party.objects.get(party_name=billsheet[0],email=billsheet[1],company=cmp)
+      CreditNote.objects.create(party=part,retrn_no=totval,
+                                  date=billsheet[2],
+                                  supplyplace =billsheet[3],
+                                  tot_bill_no = totval,
+                                  company=cmp,staff=staff)
+      
+      credit = CreditNote.objects.last()
+      if billsheet[4] == 'Cheque':
+        credit.pay_method = 'Cheque'
+        credit.cheque_no = billsheet[5]
+      elif billsheet[4] == 'UPI':
+        credit.pay_method = 'UPI'
+        credit.upi_no = billsheet[5]
+      else:
+        if billsheet[4] != 'Cash':
+          bank = BankModel.objects.get(bank_name=billsheet[4],company=cmp)
+          credit.pay_method = bank
+        else:
+          credit.pay_method = 'Cash'
+      credit.save()
+
+      CreditNote.objects.filter(company=cmp).update(tot_bill_no=totval)
+      totval += 1
+      subtotal = 0
+      taxamount=0
+      for row_number2 in range(2, ep.max_row + 1):
+        prdsheet = [ep.cell(row=row_number2, column=col_num).value for col_num in range(1, ep.max_column + 1)]
+        if prdsheet[0] == row_number1:
+          itm = ItemModel.objects.get(item_name=prdsheet[1],item_hsn=prdsheet[2])
+          total=int(prdsheet[3])*int(itm.item_purchase_price) - int(prdsheet[5])
+      CreditNoteItem.objects.create(creditnote=credit,
+                                company=cmp,
+                                product=itm,
+                                qty=prdsheet[3],
+                                tax=prdsheet[4],
+                                discount=prdsheet[5],
+                                total=total)
+
+      temp = prdsheet[4].split('[')
+      if billsheet[3] =='State':
+        tax=int(temp[0][3:])
+      else:
+        tax=int(temp[0][4:])
+
+        subtotal += total
+        tamount = total *(tax / 100)
+        taxamount += tamount
+                
+      if billsheet[3]=='State':
+        gst = round((taxamount/2),2)
+        credit.sgst=gst
+        credit.cgst=gst
+        credit.igst=0
+
+      else:
+        gst=round(taxamount,2)
+        credit.igst=gst
+        credit.cgst=0
+        credit.sgst=0
+
+      gtotal = subtotal + taxamount + float(billsheet[6])
+      balance = gtotal- float(billsheet[7])
+      gtotal = round(gtotal,2)
+      balance = round(balance,2)
+
+      credit.subtotal=round(subtotal,2)
+      credit.taxamount=round(taxamount,2)
+      credit.adjust=round(billsheet[6],2)
+      credit.grandtotal=gtotal
+      credit.advance=round(billsheet[7],2)
+      credit.balance=balance
+      credit.save()
+
+      CreditNoteTransactionHistory.objects.create(creditnote=credit,staff=credit.staff,company=credit.company,action='Created')
+      return JsonResponse({'message': 'File uploaded successfully!'})
+  else:
+    return JsonResponse({'message': 'File upload Failed!'})
+
+
+def delete_CreditNote(request,id):
+  sid = request.session.get('staff_id')
+  staff = staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id) 
+  credit = CreditNote.objects.get(id=id)
+  CreditNoteItem.objects.get(creditnote=credit,company=cmp).delete()
+  credit.delete()
+  return redirect('creditnote_list')
+
+def edit_creditnote(request,id):
+  toda = date.today()
+  tod = toda.strftime("%Y-%m-%d")
+  
+  sid = request.session.get('staff_id')
+  staff =  staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id)
+  part= party.objects.filter(company=cmp,user=cmp.user)
+  item = ItemModel.objects.filter(company=cmp,user=cmp.user)
+  item_units = UnitModel.objects.filter(user=cmp.user,company=staff.company.id)
+  bank = BankModel.objects.filter(company=cmp,user=cmp.user)
+  allmodules= modules_list.objects.get(company=staff.company,status='New')
+  credit = CreditNote.objects.get(id=id,company=cmp)
+  credititm = CreditNoteItem.objects.filter(creditnote=credit,company=cmp)
+
+
+  if credit.pay_method != 'Cash' and credit.pay_method != 'Cheque' and credit.pay_method != 'UPI':
+    bankno = BankModel.objects.get(id= credit.pay_method,company=cmp,user=cmp.user)
+  else:
+    bankno = 0
+
+  bdate = credit.date.strftime("%Y-%m-%d")
+  context = {'staff':staff, 'allmodules':allmodules, 'credit':credit, 'credititm':credititm,'tod':tod,
+             'party':part, 'item':item, 'item_units':item_units, 'bdate':bdate,'bank':bank, 'bankno':bankno}
+  return render(request,'company/edit_creditnot.html',context)
+
+
+def get_inv_date(request):
+    selected_bill_no = request.POST.get('bill_no', None)
+
+    try:
+        # Get the latest PurchaseBill with the specified bill_number
+        sales_inv =SalesInvoice.objects.filter(invoice_no=selected_bill_no).latest('inv_date')
+        bill_date = sales_inv.date.strftime('%Y-%m-%d')
+    except SalesInvoice.DoesNotExist:
+        return JsonResponse({'error': 'Bill number not found'}, status=400)
+    except SalesInvoice.MultipleObjectsReturned:
+        # Handle the case where multiple PurchaseBills are found for the same bill_number
+        return JsonResponse({'error': 'Multiple PurchaseBills found for the same bill number'}, status=400)
+
+    return JsonResponse({'bill_date': bill_date})
+def salesinvoicedata(request):
+    try:
+        party_name = request.POST['id']
+        party_instance = party.objects.get(id=party_name)
+
+        # Initialize lists to store multiple bill numbers and dates
+        bill_numbers = []
+        bill_dates = []
+
+        try:
+            # Retrieve all PurchaseBill instances for the party
+            bill_instances = SalesInvoice.objects.filter(party=party_instance)
+
+            # Loop through each PurchaseBill instance and collect bill numbers and dates
+            for bill_instance in bill_instances:
+                bill_numbers.append(bill_instance.invoice_no)
+                bill_dates.append(bill_instance.date)
+
+        except SalesInvoice.DoesNotExist:
+            pass
+
+        # Return a JSON response with the list of bill numbers and dates
+        if not bill_numbers and not bill_dates:
+            return JsonResponse({'bill_numbers': ['nobill'], 'bill_dates': ['nodate']})
+
+        return JsonResponse({'bill_numbers': bill_numbers, 'bill_dates': bill_dates})
+
+    except KeyError:
+        return JsonResponse({'error': 'The key "id" is missing in the POST request.'})
+
+    except party.DoesNotExist:
+        return JsonResponse({'error': 'Party not found.'})
+    
+  
+@login_required(login_url='login')
+def  creditnote_item_unit(request):
+  if request.method=='POST':
+    user = User.objects.get(id=request.user.id)
+    company_user_data = company.objects.get(user=request.user.id)
+    item_unit_name = request.POST.get('item_unit_name')
+    unit_data = UnitModel(user=user,company=company_user_data,unit_name=item_unit_name)
+    unit_data.save()
+  return JsonResponse({'message':'asdasd'})
+
+
+
 
 
 
