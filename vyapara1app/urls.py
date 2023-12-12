@@ -215,7 +215,7 @@ urlpatterns = [
 
       #______________sales return(new)_________________Keerthana___________________________
 
-    path('sales_first', views.sales_first, name='sales_first'),
+    # path('sales_first', views.sales_first, name='sales_first'),
     path('create_sale', views.create_sale, name='create_sale'),
     path('new_creditnote_item', views.new_creditnote_item, name='new_creditnote_item'),
     path('get_hsn_for_item',views.get_hsn_for_item,name='get_hsn_for_item'),
@@ -227,8 +227,15 @@ urlpatterns = [
     path('saveparty',views.saveparty,name='saveparty'),
     path('credit_bankdetails',views.credit_bankdetails,name='credit_bankdetails'),
     path('add_creditnote',views.add_creditnote,name='add_creditnote'),
-    
-
+    path('detail_creditnote',views.detail_creditnote,name='detail_creditnote'),
+    # path('creditnotehistory',views.creditnotehistory,name='creditnotehistory'),
+    path('import_creditnote',views.import_creditnote,name='import_creditnote'),
+    path('delete_CreditNote/<int:id>/', views.delete_CreditNote, name='delete_CreditNote'),
+    path('creditnote_item_unit',views.creditnote_item_unit,name='creditnote_item_unit'),
+    path('edit_creditnote/<int:id>/',views.edit_creditnote,name='edit_creditnote'),
+    path('salesinvoicedata',views.salesinvoicedata,name='salesinvoicedata'),
+    path('get_inv_date',views.get_inv_date,name='get_inv_date'),
+    path('update_creditnote/<int:id>/',views.update_creditnote,name='update_creditnote'),
 
 
 

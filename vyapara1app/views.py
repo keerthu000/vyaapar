@@ -4737,7 +4737,7 @@ def add_creditnote(request):
     part = party.objects.get(id=party_id)
     return_no=request.POST.get('creditno')
     partmob=request.POST.get('partyPhoneNumber')
-    creditdate=request.POST.get('date1')
+    creditdate=request.POST.get('cr_date')
     invoice_date=request.POST.get('inv_date')
     supplyplace =request.POST.get('destination')
     pay_method=request.POST.get("payment_method")
@@ -4766,7 +4766,7 @@ def add_creditnote(request):
     qty =  tuple(request.POST.getlist("qty[]"))
     rate=tuple(request.POST.getlist("price[]"))
     discount =  tuple(request.POST.getlist("discount[]"))
-    if request.POST.get('placosupply') =='State':
+    if request.POST.get('destination') =='State':
       tax =  tuple(request.POST.getlist("tax1[]"))
     else:
       tax =  tuple(request.POST.getlist("tax2[]"))
@@ -4786,6 +4786,7 @@ def add_creditnote(request):
     
     creditnote.tot_credit_no = creditnote.retrn_no
     creditnote.save()
+
     return redirect('creditnote_list')
 
   return render(request,'company/create_sale.html')
@@ -5080,7 +5081,7 @@ def delete_CreditNote(request,id):
   staff = staff_details.objects.get(id=sid)
   cmp = company.objects.get(id=staff.company.id) 
   credit = CreditNote.objects.get(id=id)
-  CreditNoteItem.objects.get(creditnote=credit,company=cmp).delete()
+  CreditNoteItem.objects.filter(creditnote=credit,company=cmp).delete()
   credit.delete()
   return redirect('creditnote_list')
 
@@ -5092,12 +5093,12 @@ def edit_creditnote(request,id):
   staff =  staff_details.objects.get(id=sid)
   cmp = company.objects.get(id=staff.company.id)
   part= party.objects.filter(company=cmp,user=cmp.user)
-  item = ItemModel.objects.filter(company=cmp,user=cmp.user)
+  item = ItemModel.objects.filter(user=cmp.user,company=staff.company.id)
   item_units = UnitModel.objects.filter(user=cmp.user,company=staff.company.id)
   bank = BankModel.objects.filter(company=cmp,user=cmp.user)
   allmodules= modules_list.objects.get(company=staff.company,status='New')
   credit = CreditNote.objects.get(id=id,company=cmp)
-  credititm = CreditNoteItem.objects.filter(creditnote=credit,company=cmp)
+  credit_itm = CreditNoteItem.objects.filter(creditnote=credit,company=cmp)
 
 
   if credit.pay_method != 'Cash' and credit.pay_method != 'Cheque' and credit.pay_method != 'UPI':
@@ -5106,9 +5107,57 @@ def edit_creditnote(request,id):
     bankno = 0
 
   bdate = credit.date.strftime("%Y-%m-%d")
-  context = {'staff':staff, 'allmodules':allmodules, 'credit':credit, 'credititm':credititm,'tod':tod,
-             'party':part, 'item':item, 'item_units':item_units, 'bdate':bdate,'bank':bank, 'bankno':bankno}
+  context = {'staff':staff, 'allmodules':allmodules, 'credit':credit, 'credititm':credit_itm,'tod':tod,
+             'party':part, 'product':item, 'item_units':item_units, 'bdate':bdate,'bank':bank, 'bankno':bankno}
   return render(request,'company/edit_creditnot.html',context)
+
+
+def update_creditnote(request,id):
+  if request.method =='POST':
+    sid = request.session.get('staff_id')
+    staff = staff_details.objects.get(id=sid)
+    cmp = company.objects.get(id=staff.company.id)  
+    part = party.objects.get(id=request.POST.get('partyname'))
+    credit = CreditNote.objects.get(id=id,company=cmp)
+    credit.party = part
+    credit.date = request.POST.get('cr_date')
+    credit.supplyplace  = request.POST.get('placosupply')
+    credit.subtotal =float(request.POST.get('subtotal'))
+    credit.grandtotal = request.POST.get('grandtotal')
+    credit.igst = request.POST.get('igst')
+    credit.cgst = request.POST.get('cgst')
+    credit.sgst = request.POST.get('sgst')
+    credit.taxamount = request.POST.get("taxamount")
+    credit.adjust = request.POST.get("adj")
+    credit.pay_method = request.POST.get("method")
+    credit.cheque_no = request.POST.get("cheque_id")
+    credit.upi_no = request.POST.get("upi_id")
+    credit.advance = request.POST.get("advance")
+    credit.balance = request.POST.get("balance")
+
+    credit.save()
+
+    product = tuple(request.POST.getlist("product[]"))
+    qty = tuple(request.POST.getlist("qty[]"))
+    if request.POST.get('placosupply') == 'State':
+      tax =tuple( request.POST.getlist("tax1[]"))
+    else:
+      tax = tuple(request.POST.getlist("tax2[]"))
+    total = tuple(request.POST.getlist("total[]"))
+    discount = tuple(request.POST.getlist("discount[]"))
+
+    CreditNoteItem.objects.filter(creditnote=credit,company=cmp).delete()
+    if len(total)==len(discount)==len(qty)==len(tax):
+      mapped=zip(product,qty,tax,discount,total)
+      mapped=list(mapped)
+      for ele in mapped:
+        itm = ItemModel.objects.get(id=ele[0])
+        CreditNoteItem.objects.create(product =itm,qty=ele[1], tax=ele[2],discount=ele[3],total=ele[4],creditnote=credit,company=cmp)
+
+    CreditNoteTransactionHistory.objects.create(creditnote=credit,company=cmp,staff=staff,action='Updated')
+    return redirect('creditnote_list')
+
+  return redirect('creditnote_list')
 
 
 def get_inv_date(request):
