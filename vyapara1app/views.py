@@ -4965,7 +4965,7 @@ def detail_creditnote(request,id):
   itm_len = len(citm)
 
   context={'staff':staff,'allmodules':allmodules,'credit':credit,'citm':citm,'itm_len':itm_len,'dis':dis}
-  return render(request,'company/purchasebilldetails.html',context)
+  return render(request,'company/creditnotedetails.html',context)
 
 
 
