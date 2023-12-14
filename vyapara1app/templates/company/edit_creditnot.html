@@ -8,6 +8,7 @@
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
 
+
 <style>
     .card-body{
         box-shadow: 2px 2px 10px 3px rgba(0, 0, 0, 0.397);
@@ -16,7 +17,7 @@
 
     #tab_logic{
         margin-left: 10px;
-        width: 98%;
+        width: 99%;
     }
 
     #tab_logic thead th{
@@ -112,11 +113,11 @@
                                                 <div class="col-md-4">
                                                     <label class="col-form-label">Party</label>
                                                     <div class="d-flex">
-                                                        <select name="partyname" id="customer" class="form-control border-secondary" style="color: black; background-color: white;"  onclick="updateSourceOfSupply()">
+                                                        <select name="partyname" id="customer" class="form-control border-secondary" style="color: black; background-color: white;"  onclick=" updateSourceOfSupply()">
                                                             <option value="{{credit.party.id}}" selected hidden>{{credit.party.party_name}}</option>
                                                             {% for p in party %}
                                                                 {% if p.cid_id == cmp.cid %}
-                                                                <option value="{{p.id}}"> {{ p.party_name }}</option>
+                                                                <option value="{{p.id}}" data-state="{{ p.state }}"> {{ p.party_name }}</option>
                                                                 {% endif %}
                                                             {% endfor %}
                                                         </select> &nbsp;&nbsp;&nbsp;
@@ -131,7 +132,7 @@
                                                         </div> 
                                                     {% else %}
                                                         <div class="mt-1 d-flex" >
-                                                            &nbsp;<span id="balancediv" style=" color: black;"> Available Balance : <span id="balval" style="color: green;">{{pbill.party.openingbalance}}</span></span>
+                                                            &nbsp;<span id="balancediv" style=" color: black;"> Available Balance : <span id="balval" style="color: green;">{{credit.party.openingbalance}}</span></span>
                                                         </div> 
                                                     {% endif %}
                                                     {% comment %} <div id="billdiv">
@@ -259,7 +260,7 @@
                                                                     <input type="text" id="intrataxval{{ forloop.counter }}" value="{{j.product.item_gst}}" hidden>
                                                                     <input type="text" id="intertaxval{{ forloop.counter }}" value="{{j.product.item_igst}}" hidden>
                                                                     <input type="text"  id="select_tax{{ forloop.counter }}" placeholder="Tax Rate" class="form-control seltax d-none">
-                                                                    {% if credit.supplyplace  == 'State'  %}
+                                                                    {% if credit.supplyplace == 'State'  %}
                                                                         <select name='tax1[]' id="tax1{{ forloop.counter }}" class="form-control tax intra_tax d-flex border-secondary" style="color: black; background-color: white;">
                                                                             <option selected value="{{j.tax}}" >{{j.tax}}</option>
                                                                             <option  value=" " hidden>Select Tax</option>
@@ -884,7 +885,34 @@
 
         </div>
     </div>
+    
 
+
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+          $("#customer").change(function () {
+              var party_name = $(this).val();
+              if (party_name) {
+                  // Make an AJAX request to get both the party's phone number and balance
+                  $.get('{% url "get_party_number" %}', { partyname: party_name })
+                      .then(function (data) {
+                          $("#partyPhoneNumber").val(data.phone);
+                          $("#balval").text(data.balance);
+                      })
+                      .catch(function (error) {
+                          console.log("Error fetching party details:", error);
+                      });
+              }
+          });
+      
+          // Assuming you want to handle the button click as well
+          $(".add-party-btn").click(function () {
+              // Your button click logic here
+          });
+      });
+      
+      </script>   
 
 <script>
     $(document).ready(function(){
@@ -1208,7 +1236,7 @@
 
 <script>
     
-    $(document).on("change", "#plosu", function(){
+    $(document).on("change", "#customer", function(){
         var taxes = document.getElementsByClassName('seltax');
         for (var i = 0; i < taxes.length; i++) {
             taxes[i].style.display = 'none';
@@ -1454,7 +1482,7 @@
                         <div class="d-flex">
                             <select name='product[]' id="product${roinc}" class="form-control border-secondary product"  onchange="changeprd(this.id)" style="color: black; background-color: white;">
                                 <option value="" selected hidden>Select Product</option>
-                                {% for i in item %}
+                                {% for i in product %}
                                     {% if i.cid_id == cmp.cid %}
                                         <option  value="{{ i.id  }}">{{ i.item_name  }} </option>
                                     {% endif %}
@@ -1526,7 +1554,7 @@
     $(document).on('change', '.product',function(){ 
         var n = $(this).attr("id").slice(7);
         $.ajax({
-            url: "{% url 'itemdetails' %}",
+            url: "{% url 'credititemdetails' %}",
             type : 'GET',
             data:{
                 id : $(this).val(),
@@ -1729,6 +1757,10 @@
     
 </script>
 
+
+
+
+
 <script>
     var checkbox1 = document.getElementById('inclusive');
     checkbox1.addEventListener('click', function () {
@@ -1754,33 +1786,58 @@
     });
 </script>
 
-
-
+<!-- Include jQuery -->
 <script>
-    function selectOptionByValue(selectElement, value) {
-        for (var option of selectElement.options) {
-            if (option.value === value) {
-                option.selected = true;
-                break;
-            }
-        }
-    }
-  
-    function updateSourceOfSupply() {
-        var partySelect = document.getElementById('partySelect');
-        var partyState = partySelect.options[partySelect.selectedIndex].getAttribute('data-state');
+    $(document).ready(function() {
         
-        var companyState = document.getElementById('companystateValue').value.trim();
-        var destinationSelect = document.getElementById('plosu');
-  
-        if (companyState === partyState) {
-            selectOptionByValue(destinationSelect, 'State');
-        } else {
-            selectOptionByValue(destinationSelect, 'Other State');
-        }
-        handleSourceOfSupply();
-    }
-  </script>
+    
+            $(document).on("change", "#plosu", function(){
+                var taxes = document.getElementsByClassName('seltax');
+                for (var i = 0; i < taxes.length; i++) {
+                    taxes[i].style.display = 'none';
+                }
+                var table = document.getElementById("items-table-body");
+                var numberOfRows = table.rows.length;
+                var bc = document.getElementById("plosu").value;
+                if (bc == 'State' ) {
+                    document.getElementById('cgstdiv').style.display = 'flex';
+                    document.getElementById('sgstdiv').style.display = 'flex';
+                    document.getElementById('igstdiv').style.display = 'none'; 
+                    $(".inter_tax").removeClass('d-flex');
+                    $(".inter_tax").addClass('d-none');
+                    $(".intra_tax").removeClass('d-none');
+                    $(".intra_tax").addClass('d-flex');
+                    for (var l = 1; l <= numberOfRows; l++){
+                        val = document.getElementById('intrataxval'+l).value;
+                        if(document.getElementById('tax2'+l).value != ' '){
+                            document.getElementById('tax1'+l).value = val
+                        }
+                    }
+        
+                } else {
+                    document.getElementById('cgstdiv').style.display = 'none';
+                    document.getElementById('sgstdiv').style.display = 'none';
+                    document.getElementById('igstdiv').style.display = 'flex';
+                    $(".intra_tax").removeClass('d-flex');
+                    $(".intra_tax").addClass('d-none');
+                    $(".inter_tax").removeClass('d-none');
+                    $(".inter_tax").addClass('d-flex');
+                    for (var l = 1; l <= numberOfRows; l++){
+                        val = document.getElementById('intertaxval'+l).value;
+                        if(document.getElementById('tax1'+l).value != ' '){
+                            document.getElementById('tax2'+l).value = val
+                        }
+                    }
+                }
+                calc()
+            });
+        });
+</script>
+
+
+
+
+
   
 
 {% endblock %}

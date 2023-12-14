@@ -5121,7 +5121,7 @@ def update_creditnote(request,id):
     credit = CreditNote.objects.get(id=id,company=cmp)
     credit.party = part
     credit.date = request.POST.get('cr_date')
-    credit.supplyplace  = request.POST.get('placosupply')
+    credit.supplyplace  = request.POST.get('destination')
     credit.subtotal =float(request.POST.get('subtotal'))
     credit.grandtotal = request.POST.get('grandtotal')
     credit.igst = request.POST.get('igst')
@@ -5218,6 +5218,26 @@ def  creditnote_item_unit(request):
     unit_data.save()
   return JsonResponse({'message':'asdasd'})
 
+
+def history_creditnote(request,id):
+  sid = request.session.get('staff_id')
+  staff = staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id)   
+  allmodules= modules_list.objects.get(company=staff.company,status='New')
+  credit = CreditNote.objects.get(id=id,company=cmp)
+  hst= CreditNoteTransactionHistory.objects.filter(creditnote=credit,company=cmp)
+
+  context = {'staff':staff,'allmodules':allmodules,'hst':hst,'credit':credit}
+  return render(request,'company/creditnotehistory.html',context)
+def  credititemdetails(request):
+  itmid = request.GET['id']
+  itm = ItemModel.objects.get(id=itmid)
+  hsn = itm.item_hsn
+  gst = itm.item_gst
+  igst = itm.item_igst
+  price = itm.item_purchase_price
+  qty = itm.item_current_stock
+  return JsonResponse({'hsn':hsn, 'gst':gst, 'igst':igst, 'price':price, 'qty':qty})
 
 
 

@@ -227,7 +227,7 @@ urlpatterns = [
     path('saveparty',views.saveparty,name='saveparty'),
     path('credit_bankdetails',views.credit_bankdetails,name='credit_bankdetails'),
     path('add_creditnote',views.add_creditnote,name='add_creditnote'),
-    path('detail_creditnote',views.detail_creditnote,name='detail_creditnote'),
+    path('detail_creditnote/<int:id>/',views.detail_creditnote,name='detail_creditnote'),
     # path('creditnotehistory',views.creditnotehistory,name='creditnotehistory'),
     path('import_creditnote',views.import_creditnote,name='import_creditnote'),
     path('delete_CreditNote/<int:id>/', views.delete_CreditNote, name='delete_CreditNote'),
@@ -236,6 +236,8 @@ urlpatterns = [
     path('salesinvoicedata',views.salesinvoicedata,name='salesinvoicedata'),
     path('get_inv_date',views.get_inv_date,name='get_inv_date'),
     path('update_creditnote/<int:id>/',views.update_creditnote,name='update_creditnote'),
+    path('history_creditnote/<int:id>',views.history_creditnote,name='history_creditnote'),
+    path('credititemdetails',views.credititemdetails,name='credititemdetails'),
 
 
 
