@@ -4699,7 +4699,6 @@ def view_party(request,id):
 
  
 
-@login_required(login_url='login')
 def create_sale(request):
     toda = date.today()
     tod = toda.strftime("%Y-%m-%d")
@@ -4786,14 +4785,20 @@ def add_creditnote(request):
     
     creditnote.tot_credit_no = creditnote.retrn_no
     creditnote.save()
+    CreditNoteTransactionHistory.objects.create(creditnote=creditnote,company=cmp,staff=staff,action='Created')
+    if 'save_and_new' in request.POST:
+      return redirect('create_sale')
+    if 'save' in request.POST:
+      return redirect('creditnote_list')
+  return render(request, 'company/create_sale.html')
 
-    return redirect('creditnote_list')
 
-  return render(request,'company/create_sale.html')
+
+    
 
 
   
-@login_required(login_url='login')
+
 def new_creditnote_item(request):
   print('items')
   if request.method=='POST':
@@ -4858,7 +4863,7 @@ def get_hsn_for_item(request):
   return JsonResponse({'hsn':hsn, 'gst':gst, 'igst':igst, 'price':price, 'qty':qty})
 
 
-@login_required(login_url='login')
+
 def get_party_number(request):
     selected_party_id = request.GET.get('partyname')
     party_instance = get_object_or_404(party, id=selected_party_id)
@@ -4878,7 +4883,7 @@ def get_party_number(request):
 
 # 
 
-@login_required(login_url='login')
+
 def creditnote_list(request):
   sid = request.session.get('staff_id')
   staff =  staff_details.objects.get(id=sid)
@@ -5208,7 +5213,7 @@ def salesinvoicedata(request):
         return JsonResponse({'error': 'Party not found.'})
     
   
-@login_required(login_url='login')
+
 def  creditnote_item_unit(request):
   if request.method=='POST':
     user = User.objects.get(id=request.user.id)
@@ -5229,6 +5234,8 @@ def history_creditnote(request,id):
 
   context = {'staff':staff,'allmodules':allmodules,'hst':hst,'credit':credit}
   return render(request,'company/creditnotehistory.html',context)
+
+
 def  credititemdetails(request):
   itmid = request.GET['id']
   itm = ItemModel.objects.get(id=itmid)
