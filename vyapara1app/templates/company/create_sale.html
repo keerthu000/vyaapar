@@ -310,7 +310,7 @@
                                                                       {% endif %}
                                                                   {% endfor %}
                                                               </select> &nbsp;&nbsp;&nbsp;
-                                                          <button id="modal_closing" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#newitem" data-bs-whatever="@mdo">
+                                                          <button id="openModalBtn" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#newitem" data-bs-whatever="@mdo">
                                                               <span class="fa fa-plus"></span>
                                                           </button>
                                                           </div>
@@ -517,7 +517,7 @@
                                     <div class="col-md-3">
                                         <input style="color: black;" class="form-control border-dark fw-bolder" type="text" placeholder="ITEM NAME" autocomplete="off" id="item_name" name="item_name" required>
                                     </div>
-                                    <div class="col-md-3">
+                                    <di v class="col-md-3">
                                         <input style="color: black;" class="form-control border-dark fw-bolder" type="number" placeholder="ITEM HSN" id="hsn" name="hsn" onchange="checkhsn(this)" required>
                                         <div class="text-danger m-2" id="warnhsn"></div>
                                     </div>
@@ -645,7 +645,7 @@
                 </div> 
             </div> 
         </div>
-    </div>
+      </div>
              
 {% comment %} <div class="modal fade" id="newunit">
   <div class="modal-dialog modal-xl">
@@ -1731,67 +1731,73 @@ function checkphone(element) {
   }
 </script>
 
-
 <script>
-  $(document).on("click", "#customersave", function(){
-    if ($('#toPayRadio').is(':checked')) {
-        pay = $('#toPayRadio').val()
-    } else {
-        pay = $('#toReceiveRadio').val()
-    }
-    $.ajax({
+    $(document).on("click", "#customersave", function () {
+        var pay = $('#toPayRadio').is(':checked') ? $('#toPayRadio').val() : $('#toReceiveRadio').val();
 
-        type : 'POST',
-        url:"{% url 'saveparty' %}",
-        data:{
-            name : $('#partyname').val(),
-            email : $("#partyemail").val(),
-            mobile :$("#partyphno").val(),
-            splystate : $("#splystate").val(),
-            baddress : $("#baddress").val(),
-            gsttype :$("#modalgsttype").val(),
-            gstin :$("#gstin").val(),
-            partydate : $("#partydate").val(),
-            paytype : pay,
-            openbalance : $("#openbalance").val(),
-            credit_limit : $("#crd_lmt").val(),
-            add1 : $("#additional1").val(),
-            add2 : $("#additional2").val(),
-            add3 : $("#additional3").val(),
-            csrfmiddlewaretoken: '{{ csrf_token }}',
-        },
-        success: function(response) {
-            document.getElementById("modalCustomer").reset();
-            $('#partycreation').modal('hide');
-            reloadCustomer();
-        },
-    });   
-});
-
-function reloadCustomer() {
-    $.ajax({
-        url: "{% url 'party_dropdown' %}",
-        type: "GET",
-        dataType: "json",
-        data: $(this).serialize(),
-        csrfmiddlewaretoken: '{{ csrf_token }}',
-
-        success: function(response) {
-            id_list = response.id_list
-            party_list = response.party_list
-            console.log(party_list)
-            var $select = $(document.getElementById('partySelect'));
-            var selectize = $select[0].selectize;
-            for(let i=0; i<id_list.length;i++){
-                selectize.addOption({value:id_list[i],text:party_list[i]});
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'saveparty' %}",
+            data: {
+                name: $('#partyname').val(),
+                email: $("#partyemail").val(),
+                mobile: $("#partyphno").val(),
+                splystate: $("#splystate").val(),
+                baddress: $("#baddress").val(),
+                gsttype: $("#modalgsttype").val(),
+                gstin: $("#gstin").val(),
+                partydate: $("#partydate").val(),
+                paytype: pay,
+                openbalance: $("#openbalance").val(),
+                credit_limit: $("#crd_lmt").val(),
+                add1: $("#additional1").val(),
+                add2: $("#additional2").val(),
+                add3: $("#additional3").val(),
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+            },
+            success: function (response) {
+                // Assuming the server responds with the new party data
+                console.log('Server response:', response);
+                document.getElementById("modalCustomer").reset();
+                $('#partycreation').modal('hide');
+                reloadCustomer();
+            },
+            error: function (xhr, status, error) {
+                console.error('Error saving party:', error);
             }
-            selectize.setValue("");
-        },
+        });
     });
-}
 
+    function reloadCustomer() {
+        $.ajax({
+            url: "{% url 'party_dropdown' %}",
+            type: 'GET',
+            success: function (data) {
+                // Assuming the server responds with the correct data format
+                console.log('Party Names Data:', data);
 
+                // Populate the dropdown with party names
+                var dropdown = $('#repeatSelect');
+                dropdown.empty();  // Clear existing options
+
+                // Add the new options
+                for (var i = 0; i < data.id_list.length; i++) {
+                    dropdown.append($('<option>').text(data.party_list[i]).val(data.id_list[i]));
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Error fetching party names:', error);
+            }
+        });
+    }
+
+    // Call the function on document ready to populate the dropdown initially
+    $(document).ready(function () {
+        reloadCustomer();
+    });
 </script>
+
+
 <script>
   $(document).ready(function() {
       $("#advance").change(function() {
@@ -1883,57 +1889,75 @@ $(document).on("change", "#plosu", function(){
 </script>  {% endcomment %}
 
 <script>
-  $(document).ready(function () {
-    // Open modal when the button is clicked
-    $('#openModalBtn').on('click', function () {
-      // Reset the form when opening the modal
-      $('#addItemForm')[0].reset();
-      $('#newitem').modal('toggle'); // Use 'toggle' instead of 'show'
+    $(document).on("click", "#itemsave", function () {
+        var item_name = document.getElementById('item_name').value;
+    
+        if ($('#inclusive').prop('checked')) {
+            tax = $('#inclusive').val();
+        } else {
+            tax = $('#check').val();
+        }
+    
+        if (item_name === '') {
+            alert('Please provide an Item Name');
+        } else {
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'new_creditnote_item' %}",
+                data: {
+                    name: $("#item_name").val(),
+                    unit: $("#unit").val(),
+                    hsn: $("#hsn").val(),
+                    taxref: tax,
+                    sell_price: $("#saleprice").val(),
+                    cost_price: $("#purprice").val(),
+                    intra_st: $("#intra_st").val(),
+                    inter_st: $("#inter_st").val(),
+                    itmdate: $("#itmdate").val(),
+                    stock: $("#stock").val(),
+                    itmprice: $("#itmprice").val(),
+                    minstock: $("#minstock").val(),
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                },
+    
+                success: function (response) {
+                    reloadItem();
+                    console.log(response); // Add this line for debugging
+                    document.getElementById("modalItem").reset();
+                    $('#newitem').modal('hide');
+                    
+                },
+            });
+        }
     });
-
-    // Submit form using AJAX
-    $('#addItemForm').on('submit', function (e) {
-      e.preventDefault();
-
-      $.ajax({
-        type: 'POST',
-        url: "{% url 'new_creditnote_item' %}",
-        headers: { "X-CSRFToken": "{{ csrf_token }}" },
-        data: $(this).serialize(),
-        success: function (response) {
-          console.log('AJAX request successful');
-          if (response.status === 'success') {
-            alert(response.message);
-
-            // Reset the form when closing the modal
-            $('#addItemForm')[0].reset();
-
-            // Update the dropdown dynamically with both item ID and item name/HSN
-            $('#product1').append($('<option>', {
-              value: response.item_id,
-              text: response.item_name 
-            }));
-
-            // Close the modal properly
-            $('#newitem').modal('hide');
-
-            // Clear any backdrop that might be causing the blurred effect
-            $('body').removeClass('modal-open');
-            $('.modal-backdrop').remove();
-
-            // Optionally, focus on the next input in the main form
-            // Replace 'nextInputID' with the actual ID of the next input
-            $('#nextInputID').focus();
-          } else {
-            alert(response.message);
-          }
-        },
-        error: function (xhr, status, error) {
-          console.error('AJAX request failed:', error);
-        },
-      });
-    });
-  });
+    
+    
+    function reloadItem() {
+        $.ajax({
+            url: "{% url 'creditnote_item_dropdown' %}",
+            type: "GET",
+            dataType: "json",
+            data: {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+            },
+            success: function(data) {
+                id_list = data.id_list
+                product_list = data.product_list
+                var table = document.getElementById('tab_logic');
+                var rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+                for (var i = 1; i <= rows.length; i++) {
+                    var $select = $(document.getElementById('product'+i));
+                    var selectize = $select[0].selectize;
+                    for(let i=0; i<id_list.length;i++){
+                        selectize.addOption({value:id_list[i],text:product_list[i]});
+                    }
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error(xhr.responseText);
+            }
+        });
+    }
 </script>
 
 <script>

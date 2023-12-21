@@ -4801,54 +4801,36 @@ def add_creditnote(request):
 
 def new_creditnote_item(request):
   print('items')
-  if request.method=='POST':
-    user = User.objects.get(id=request.user.id)
-    company_user_data = company.objects.get(user=request.user.id)
-    item_name = request.POST.get('item_name')
-    item_hsn = request.POST.get('item_hsn')
-    item_unit = request.POST.get('item_unit')
-    item_taxable = request.POST.get('item_taxable')
-    item_gst = request.POST.get('item_gst')
-    item_igst = request.POST.get('item_igst')
-    item_sale_price = request.POST.get('item_sale_price')
-    item_purchase_price = request.POST.get('item_purchase_price')
-    item_opening_stock = request.POST.get('item_opening_stock')
-    item_current_stock = item_opening_stock
-    if item_opening_stock == '' or None :
-      item_opening_stock = 0
-      item_current_stock = 0
-    item_at_price = request.POST.get('item_at_price')
-    if item_at_price == '' or None:
-      item_at_price =0
-    item_date = request.POST.get('item_date')
-    item_min_stock_maintain = request.POST.get('item_min_stock_maintain')
-    if item_min_stock_maintain == ''  or None:
-      item_min_stock_maintain = 0
-    item_data = ItemModel(user=user,
-                          company=company_user_data,
-                          item_name=item_name,
-                          item_hsn=item_hsn,
-                          item_unit=item_unit,
-                          item_taxable=item_taxable,
-                          item_gst=item_gst,
-                          item_igst=item_igst,
-                          item_sale_price=item_sale_price,
-                          item_purchase_price=item_purchase_price,
-                          item_opening_stock=item_opening_stock,
-                          item_current_stock=item_current_stock,
-                          item_at_price=item_at_price,
-                          item_date=item_date,
-                          item_min_stock_maintain=item_min_stock_maintain)
-    item_data.save()
-    return JsonResponse({
-            'status': 'success',
-            'message': 'Item added successfully',
-            'item_id': item_data.id,
-            'item_name': item_data.item_name,
-            'item_hsn': item_data.item_hsn,
-        })
-  else:
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+  sid = request.session.get('staff_id')
+  staff =  staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id)
+
+  name = request.POST['name']
+  unit = request.POST['unit']
+  hsn = request.POST['hsn']
+  taxref = request.POST['taxref']
+  sell_price = request.POST['sell_price']
+  cost_price = request.POST['cost_price']
+  intra_st = request.POST['intra_st']
+  inter_st = request.POST['inter_st']
+
+  if taxref != 'Taxable':
+    intra_st = 'GST0[0%]'
+    inter_st = 'IGST0[0%]'
+
+  itmdate = request.POST.get('itmdate')
+  stock = request.POST.get('stock')
+  itmprice = request.POST.get('itmprice')
+  minstock = request.POST.get('minstock')
+
+  if not hsn:
+    hsn = None
+
+  itm = ItemModel(item_name=name, item_hsn=hsn,item_unit=unit,item_taxable=taxref, item_gst=intra_st,item_igst=inter_st, item_sale_price=sell_price, 
+                item_purchase_price=cost_price,item_opening_stock=stock,item_current_stock=stock,item_at_price=itmprice,item_date=itmdate,
+                item_min_stock_maintain=minstock,company=cmp,user=cmp.user)
+  itm.save() 
+  return JsonResponse({'success': True})
   
 
 def get_hsn_for_item(request):
@@ -4904,18 +4886,19 @@ def creditnote_list(request):
 
 
 def party_dropdown(request):
-  sid = request.session.get('staff_id')
-  staff =  staff_details.objects.get(id=sid)
-  cmp = company.objects.get(id=staff.company.id)
-  part = party.objects.filter(company=cmp,user=cmp.user)
+    sid = request.session.get('staff_id')
+    staff = get_object_or_404(staff_details, id=sid)
+    cmp = get_object_or_404(company, id=staff.company.id)
 
-  id_list = []
-  party_list = []
-  for p in part:
-    id_list.append(p.id)
-    party_list.append(p.party_name)
+    # Filter parties based on company and user
+    part = party.objects.filter(company=cmp, user=cmp.user)
 
-  return JsonResponse({'id_list':id_list, 'party_list':party_list })
+    # Extract party IDs and names
+    id_list = [p.id for p in part]
+    party_list = [p.party_name for p in part]
+
+    # Return the data as JSON
+    return JsonResponse({'id_list': id_list, 'party_list': party_list})
 
 
 
@@ -5245,6 +5228,18 @@ def  credititemdetails(request):
   price = itm.item_purchase_price
   qty = itm.item_current_stock
   return JsonResponse({'hsn':hsn, 'gst':gst, 'igst':igst, 'price':price, 'qty':qty})
+
+
+def creditnote_item_dropdown(request):
+  sid = request.session.get('staff_id')
+  staff =  staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id)
+
+  options = {}
+  option_objects = ItemModel.objects.filter(company=cmp,user=cmp.user)
+  for option in option_objects:
+      options[option.id] = [option.item_name]
+  return JsonResponse(options)
 
 
 
