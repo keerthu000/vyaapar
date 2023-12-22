@@ -3,16 +3,25 @@
 {% load static %}
 
 <!-- Add Bootstrap CSS -->
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+{% comment %} <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 
 <!-- Add Bootstrap JS and Popper.js (if needed) -->
-<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script> {% endcomment %}
+{% comment %} <link href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/css/select2.min.css" rel="stylesheet" />
+<script src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/js/select2.min.js" defer></script> {% endcomment %}
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+
+
 
 <style>
 
@@ -112,36 +121,55 @@
 #toPayRadio {
     accent-color: red;
 }
+{% comment %} /* Style the Select2 container */
+.select2-container {
+  width: 300px; /* Set the width of the dropdown container */
+}
 
-    {% comment %} .bs {
-      box-shadow: 2px 2px 10px 3px rgba(0, 0, 0, 0.397);
-    }
-  
-    .bs_sm {
-      box-shadow: inset 2px 2px 5px 3px rgba(0, 0, 0, 0.199);
-    }
-  
-    .tb {
-      color: black;
-    }
-  
-    .tg {
-      color: rgb(0, 140, 7);
-    }
-  
-    .tr {
-      color: rgb(218, 0, 0);
-    }
-  
-  
-  
-    ::-webkit-scrollbar {
-      display: none
-    }
-    select option:hover{
-      background-color: black;
-    }
-    {% endcomment %}
+/* Style the Select2 input field */
+.select2-selection__rendered {
+  padding: 5px; /* Set the padding for the selected option */
+}
+
+/* Style the Select2 input like Bootstrap form-control */
+.select2-selection {
+  height: auto !important;
+}
+
+/* Apply Bootstrap form-control styles to the input */
+.select2-selection__rendered {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #495057;
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+/* Style the Select2 dropdown arrow */
+.select2-selection__arrow {
+  height: calc(1.5em + 0.75rem);
+  width: 0.75rem;
+}
+
+/* Style the Select2 dropdown list */
+.select2-dropdown {
+  border: 1px solid #ced4da; /* Set the border of the dropdown list */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Add a box shadow to the dropdown list */
+}
+
+/* Style the Select2 options */
+.select2-results__option {
+  padding: 8px; /* Set the padding for each option */
+  cursor: pointer; /* Set the cursor to pointer for better UX */
+} {% endcomment %}
+
     
 </style>
 
@@ -166,7 +194,7 @@
                   </a>
               </div>
               <p></p>
-
+             
               <form action="{% url 'add_creditnote' %}" method="post" enctype="multipart/form-data" onsubmit="return validatepurchasebill()" novalidate>
                   {% csrf_token %}
                   <div class="page-content">
@@ -204,7 +232,7 @@
                                               &nbsp;<span id="ava_balance" style=" color: black;"> Available Balance : <span id="ava_balance"></span></span>
                                           </div>
                                                                             
-                                          <div id="creditNoteSection" style="display: none;">
+                                          <div id="creditNoteSection">
                                             <!-- Display sales invoice details here -->
                                             <label class="col-form-label">Invoice No.</label>
                                             <input type="text" class="form-control border-secondary" id="inv_no" value="" style="color: black; background-color: white;" readonly>
@@ -302,22 +330,34 @@
   
                                                       <td style="width:21%">
                                                           <div class="d-flex">
-                                                              <select name='product[]' id="product1" class="form-control border-secondary product"  onchange="changeprd(this.id)" style="color: black; background-color: white;">
-                                                                  <option value="" selected hidden>Select Product</option>
-                                                                  {% for i in item %}
-                                                                      {% if i.cid_id == cmp.cid %}
-                                                                          <option value="{{ i.id }}" >{{ i.item_name  }} </option>
-                                                                      {% endif %}
-                                                                  {% endfor %}
-                                                              </select> &nbsp;&nbsp;&nbsp;
+                                                            <select name='product[]' id="product1" class="form-control border-secondary product select2"  onchange="changeprd(this.id,this.value)" style="color: black; background-color: white;">
+                                                                <option value="" selected hidden>Select </option>
+                                                                {% for i in item %}
+                                                                   
+                                                                        <option value="{{ i.id }}" >{{ i.item_name  }} </option>
+                                                                 
+                                                                {% endfor %}
+                                                            </select> &nbsp;&nbsp;&nbsp;
+
+
+                                                            {% comment %} <script>
+                                                                $(document).ready(function() {
+                                                                    console.log('x')
+                                                                    $('#product1').select2();
+                                                                
+                                                                  });
+                                                            </script> {% endcomment %}
                                                           <button id="openModalBtn" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#newitem" data-bs-whatever="@mdo">
                                                               <span class="fa fa-plus"></span>
                                                           </button>
                                                           </div>
+
+                                                          
+
                                                       </td>
   
                                                       <td style="width:12%">
-                                                          <input type="text" name='hsn[]' id="hsn1" class="form-control border-secondary HSNCODE" style="color: black; background-color: white;" readonly />
+                                                            <input type="text" name='hsn[]' id="hsn1" class="form-control border-secondary HSNCODE" style="color: black; background-color: white;" readonly />
                                                       </td>
   
                                                       <td style="width:13%">
@@ -492,8 +532,6 @@
       </div> 
 
 
-
-
       <div class="modal fade" id="newitem">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
@@ -517,7 +555,7 @@
                                     <div class="col-md-3">
                                         <input style="color: black;" class="form-control border-dark fw-bolder" type="text" placeholder="ITEM NAME" autocomplete="off" id="item_name" name="item_name" required>
                                     </div>
-                                    <di v class="col-md-3">
+                                    <div class="col-md-3">
                                         <input style="color: black;" class="form-control border-dark fw-bolder" type="number" placeholder="ITEM HSN" id="hsn" name="hsn" onchange="checkhsn(this)" required>
                                         <div class="text-danger m-2" id="warnhsn"></div>
                                     </div>
@@ -548,7 +586,7 @@
                                             </div>
                                         </div>
                                     </div>
-
+    
                                     <div id="pricing_template" style="background-color: rgba(144, 211, 117, 0.098);">
                                         <div class="row">
                                             <div class="col-sm-12  col-md-1"></div>
@@ -569,7 +607,7 @@
                                                             <option value="GST3[3%]">GST3[3%]</option>
                                                             <option value="GST5[5%]">GST5[5%]</option>
                                                             <option value="GST12[12%]">GST12[12%]</option>
-                                                            <option value="GST18[18%]">GST18[18%]</option>
+                                                            <option value="GST13[18%]">GST18[18%]</option>
                                                             <option value="GST28[28%]">GST28[28%]</option>
                                                             </select>
                                                         </div>
@@ -624,7 +662,7 @@
                                                 <div class="d-flex">
                                                     <div class="w-50 me-3">
                                                     <label class="tb fw-bold" for="itmdate" style="color: black;">DATE</label><br>
-                                                    <input style="color: black;background-color: white" id="itmdate" class="form-control fw-normal border-secondary  fs-3" type="date" required name="itmdate" value="{{tod}}">
+                                                    <input style="color: black;background-color: white" id="itmdate" class="form-control fw-normal border-secondary  fs-3" type="date" required name="itmdate" value="{{todate}}">
                                                     </div>
                                                     <div class="w-50">
                                                     <label class="tb fw-bold" for="minstock" style="color: black;">MINIMUM STOCK TO MAINTAIN</label><br>
@@ -645,8 +683,10 @@
                 </div> 
             </div> 
         </div>
-      </div>
-             
+    </div>
+    
+
+
 {% comment %} <div class="modal fade" id="newunit">
   <div class="modal-dialog modal-xl">
     <div class="modal-content" style="background: #f2f2f2;border-radius: 20px;">
@@ -716,7 +756,7 @@
                           <div class="row" style="margin-left: -1vh;">
                               <div class="col-md-4">
                                   <label class="col-form-label" for="partyname" style="color: black;">Party Name</label>
-                                  <input type="text" class="form-control border-secondary" id="partyname" name="partyname" style="color: black;" required>
+                                  <input type="text" class="form-control border-secondary" id="partyname" name="" style="color: black;" required>
                               </div>
                               <div class="col-md-4">
                                   <label class="col-form-label" style="color: black;">GSTIN</label>
@@ -897,8 +937,6 @@
 
 
 
-
-
 <script>
   $(document).ready(function(){
       $('#gsthead').css({'border-bottom': '3px solid rgba(0, 0, 0, 0.548)'})
@@ -964,222 +1002,15 @@
           $('#gsthead').click()
       })
   })
-</script>
-
-
-<!-- Add the following script in your HTML file or include it in a separate JavaScript file -->
-{% comment %} <script>
-  // Function to calculate the total for a row
-  // Global variable to store the subtotal
-var subtotal = 0;
-
-// Function to calculate the total for a row
-function calculateRowTotal(rowNumber) {
-  var quantity = parseFloat(document.getElementById('qty' + rowNumber).value) || 0;
-  var rate = parseFloat(document.getElementById('rate' + rowNumber).value) || 0;
-  var discount = parseFloat(document.getElementById('discount').value) || 0;
-
-  var total = quantity * rate - discount;
-
-  // Update the amount field for the row
-  document.getElementById('amount' + rowNumber).value = total.toFixed(2);
-
-  // Recalculate the overall total
-  recalculateTotals();
-}
-
-// Function to calculate the subtotal
-function calculateSubtotal() {
-  var rows = document.getElementsByClassName('amount');
-  subtotal = 0;
-
-  for (var i = 0; i < rows.length; i++) {
-    subtotal += parseFloat(rows[i].value) || 0;
-  }
-
-  // Display the subtotal
-  document.getElementById('subtotal').value = subtotal.toFixed(2);
-}
-
-// Function to recalculate all totals
-function recalculateTotals() {
-  var row_c = $("#items-table-body tr").length;
-  var amount_t = 0;
-  var tax_tot = 0;
-  var cgst_tot = 0;
-  var sgst_tot = 0;
-  var igst_tot = 0;
-  var ship = parseFloat($("#addcharge").val());
-
-  for (var i = 0; i < row_c; i++) {
-    var qty = parseFloat($("#qty" + i).val()) || 0;
-    var rate = parseFloat($("#rate" + i).val()) || 0;
-    var discount = parseFloat($("#discount" + i).val()) || 0;
-    var amount = qty * rate - discount;
-
-    amount_t += amount;
-
-    // Get selected tax type (GST or IGST)
-    var taxType = $("#tax" + i).val();
-
-    if (taxType == "0") {
-      // GST
-      var gstRate = parseFloat($("#tax" + i).find(":selected").text());
-      var gstAmount = (amount * gstRate) / 100;
-
-      cgst_tot += gstAmount / 2;
-      sgst_tot += gstAmount / 2;
-
-      // Hide IGST related fields
-      $("#igst").hide();
-      $("#igst").val(0);
-    } else {
-      // IGST
-      var igstRate = parseFloat($("#tax" + i).find(":selected").text());
-      igst_tot += (amount * igstRate) / 100;
-
-      // Hide CGST and SGST related fields
-      $("#cgst").hide();
-      $("#sgst").hide();
-      $("#cgst").val(0);
-      $("#sgst").val(0);
-    }
-
-    tax_tot = cgst_tot + sgst_tot + igst_tot;
-
-    // Update tax amount fields
-    $("#cgst").val(cgst_tot.toFixed(2));
-    $("#sgst").val(sgst_tot.toFixed(2));
-    $("#igst").val(igst_tot.toFixed(2));
-    $("#taxamount" + i).val(tax_tot.toFixed(2));
-
-    if (ship) {
-      $("#grandtotal").val((amount_t + tax_tot + ship).toFixed(2));
-    } else {
-      $("#grandtotal").val((amount_t + tax_tot).toFixed(2));
-    }
-
-    // Display subtotal
-    $("#subtotal").val(amount_t.toFixed(2));
-  }
-
-  calculateSubtotal();
-}
-
-// Event listener for input fields to trigger calculations
-document.addEventListener('input', function (event) {
-  var targetId = event.target.id;
-  if (targetId.startsWith('qty') || targetId.startsWith('rate') || targetId === 'discount') {
-    // Extract the row number from the target ID
-    var rowNumber = targetId.match(/\d+/)[0];
-    calculateRowTotal(rowNumber);
-  }
-});
-
-// Event listener for the "Add another line" button to clone a row
-document.getElementById('add').addEventListener('click', function () {
-  var table = document.getElementById('yourTableId'); // Replace 'yourTableId' with the actual ID of your table
-  var clone = table.rows[1].cloneNode(true); // Clone the first row
-
-  // Clear values in the cloned row
-  var inputs = clone.getElementsByTagName('input');
-  for (var i = 0; i < inputs.length; i++) {
-    inputs[i].value = '0';
-  }
-
-  // Increment the counter in the first cell of the cloned row
-  var counter = parseInt(clone.cells[0].textContent.match(/\d+/)[0]) + 1;
-  clone.cells[0].textContent = '1' + counter;
-
-  // Append the cloned row to the table
-  table.tBodies[0].appendChild(clone);
-
-  // Recalculate the overall total
-  recalculateTotals();
-});
-
-
-</script>
+</script> 
 
 
 
 
 
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    // Get the parent container that holds dynamically added rows
-    var table = document.getElementById('your-table-id'); // Replace 'your-table-id' with the actual ID of your table
-  
-    // Add an event listener to the table to handle dynamic changes
-    table.addEventListener('change', function (event) {
-      var target = event.target;
-  
-      // Check if the change occurred in the state select dropdown
-      if (target.classList.contains('destination')) {
-        updateTaxOptions(target);
-      }
-    });
-  
-    // Trigger the change event to set up initial tax options for existing rows
-    document.querySelectorAll('.destination').forEach(function (stateSelect) {
-      updateTaxOptions(stateSelect);
-    });
-  
-    // Function to update tax options based on the selected state
-    function updateTaxOptions(stateSelect) {
-      var selectedState = stateSelect.value;
-      var taxSelect = stateSelect.closest('tr').querySelector('.tax1'); // Assuming that the tax dropdown is in the same row
-  
-      console.log('Selected State:', selectedState);
-  
-      // Clear existing options
-      taxSelect.innerHTML = '';
-  
-      // Create options based on the selected state
-      var taxOptions;
-  
-      if (selectedState === 'State') {
-        // GST options
-        taxOptions = ['0', '3', '5', '12', '18', '28'];
-        addOptions(taxOptions, 'GST', taxSelect);
-      } else {
-        // IGST options
-        taxOptions = ['0', '3', '5', '12', '18', '28'];
-        addOptions(taxOptions, 'IGST', taxSelect);
-      }
-    }
-  
-    // Function to add options to a dropdown
-    function addOptions(options, type, selectElement) {
-      options.forEach(function (value) {
-        var option = document.createElement('option');
-        option.value = value;
-        option.text = value + '% ' + type + '(' + value + '%)';
-        selectElement.appendChild(option);
-      });
-    }
-  
-    // Function to add a new row
-    function addRow() {
-      // Your logic to add a new row, make sure to include proper identifiers for new elements
-      // ...
-  
-      // After adding a new row, update tax options for the new row
-      updateTaxOptions(newStateSelect); // Provide the newly added state select element
-    }
-  });
-  
-  
-</script>
-
-
- {% endcomment %}
 
 
 
-
-
-<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <script type="text/javascript">
   $(document).ready(function () {
     // Get the current date in the format "YYYY-MM-DD"
@@ -1242,154 +1073,9 @@ document.getElementById('add').addEventListener('click', function () {
     });
 });
 
-</script>
-
-{% comment %} <script type="text/javascript">
-  $(document).ready(function () {
-      $("#partySelect").change(function () {
-          var party_id = $(this).val();
-          if (party_id) {
-              // Make an AJAX request to get the party's contact number
-              $.get('{% url "get_party_balance" %}', { partyname: party_id })
-                  .then(function (data) {
-                    $("#ava_balance").text(data.balance);
-                  })
-                  .catch(function (error) {
-                      console.log("Error fetching party details:", error);
-                  });
-          }
-      });
-  });
-
-  // Assuming you want to handle the button click as well
-  $(".add-party-btn").click(function () {
-      // Your button click logic here
-  });
-</script> {% endcomment %}
+</script> 
 
 
-
-{% comment %} <script>
-  $(document).ready(function () {
-    // Counter to keep track of the number of rows
-  
-    var counter = 1;
-   
-   
-    // Function to add a new row to the table
-    function addRow() {
-      counter++;
-      var newRow = $("<tr id='row" + counter + "'>");
-      var cols = "";
-  
-      cols += "<td class='text-right' style='width: 10%;color:000;'>" + counter + "</td>";
-      cols += "<td style='width: 10%;'><div><select class='form-control bg-light text-dark border-0 item_select itm' name='item_name[]' id='item" + counter + "' onchange='fetchItemData(this.value, " + counter + ")'><option value='' selected disabled>Select Item</option>";
-  
-      // Using Django template syntax to loop through items and generate options
-      {% for i in item %}
-      cols += "<option value='{{ i.item_name }}'>" + "{{ i.item_name }}" + "</option>";
-      {% endfor %}
-  
-      cols += "</select></div></td>";
-  
-      cols += "<td style='width: 13%;' class='text-right'><input type='number' id='hsn" + counter + "' class='text-right form-control bg-light text-dark hsn' name='hsn[]' value='0'></td>";
-      cols += "<td style='width: 15%;' class='text-right'><input type='number' id='qty" + counter + "' class='text-right form-control bg-light text-dark' name='quantity[]' value='0'></td>";
-      cols += "<td style='width: 12%;' class='text-right text-dark'><input type='number' id='rate" + counter + "' class='text-right discount bg-light text-dark form-control rate' name='rate[]' value='0'></td>";
-      cols += "<input value='{{parti.state}}' id='stateValue" + counter + "' type='hidden'>";
-      cols += "<td style='width: 15%;' class='text-right'><select name='tax[]' id='tax" + counter + "' class='form-control bg-light text-dark text-right border-0 tax' onclick='toggleDateInput()'><optgroup class='text-center' label='GST'><option value='0'>0% GST(0%)</option><option value='3'>3.0% GST(3%)</option><option value='5'>5.0% GST(5%)</option><option value='12'>12.0% GST(12%)</option><option value='18'>18.0% GST(18%)</option><option value='28'>28.0% GST(28%)</option></optgroup><optgroup class='text-center' label='IGST'><option value='0'>0% IGST(0%)</option><option value='3'>3.0% IGST(3%)</option><option value='5'>5.0% IGST(5%)</option><option value='12'>12.0% IGST(12%)</option><option value='18'>18.0% IGST(18%)</option><option value='28'>28.0% IGST(28%)</option></optgroup></select></td>";
-      cols += "<td style='display: none;'><input type='text' name='taxamount" + counter + "' id='taxamount" + counter + "' class='taxamount text-dark' /></td>";
-      cols += "<td style='width: 15%;' class='text-right'><input type='number' id='discount" + counter + "' class='text-right form-control amount bg-light text-dark' name='discount[]' value='0.00'></td>";
-      cols += "<td style='width: 15%;' class='text-right'><input type='number' id='amount" + counter + "' class='text-right form-control amount bg-light text-dark' name='amount[]' value='0.00'></td>";
-      cols += "<td class='text-center'><button type='button' id='del_btn" + counter + "' class='btn btn-transparent text-danger btn-sm btn-outline-danger rounded-circle delete-row' style='width:30px'>X</button></td>";
-      cols += "<td class='text-center'><button type='button' class='btn btn-transparent text-primary btn-sm btn-outline-primary rounded-circle clone_row' id='clone_add' data-row='" + counter + "' style='width:30px'><i class='fa fa-clone'></i></button></td>";
-  
-      newRow.append(cols);
-      
-      $("#items-table-body").append(newRow);
-  
-      // Fetch data for the newly added row
-      fetchItemData($("#item" + counter).val(), counter);
-     
-    }
-   
-    // Handle click event on the "Add another line" button
-    $("#add").click(function () {
-      addRow();
-    
-    });
-    $(document).click(function () {
-      fetchItemData($("#item1" ).val(), 1);
-    });
-  
-    // You might need to adjust the following event handlers based on your actual requirements
-  
-   
-  
-    // You might need to adjust the following event handlers based on your actual requirements
-
-    // Delete row button click event
-    $(document).ready(function () {
-      $(document).on('click', '#clone_add', function () {
-          // ... Your existing logic ...
-  
-          // Clone Row Functionality
-          var newRow = cloneRow($('#row1')); // Assuming your first row has the ID 'row1'
-          $('#items-table-body').append(newRow);
-  
-          // Recalculate totals after new row added
-          recalculateTotals();
-      });
-  
-      $(document).on('click', '.delete-row', function () {
-          // Your existing delete row logic...
-          $(this).closest("tr").remove();
-          // Recalculate totals after row removed
-          recalculateTotals();
-      });
-  
-      $(document).on('click', '.clone_row', function () {
-          var row = $(this).closest('tr');
-          var newRow = cloneRow(row);
-          row.after(newRow);
-  
-          // Recalculate totals after new row added
-          recalculateTotals();
-      });
-  
-      function cloneRow(row) {
-        var newRow = row.clone();
-    
-        // Update IDs for the cloned row
-        updateRowIds(newRow);
-    
-        // Clone and update the item select element
-        var itemSelect = row.find('.item_select');
-        var newItemSelect = itemSelect.clone().val(itemSelect.val());
-        newItemSelect.attr('id', 'item' + newRow.index());
-        newRow.find('.item_select').replaceWith(newItemSelect);
-    
-        // Update any other specific attributes or values if needed
-    
-        // Append buttons with new IDs
-        newRow.find('.delete-row').attr('id', 'del_btn' + newRow.index());
-        newRow.find('.clone_row').attr('id', newRow.index());
-    
-        return newRow;
-        
-        
-    }
-    
-      function updateRowIds(newRow) {
-          // Your existing logic to update IDs based on the row index
-      }
-  
-      function recalculateTotals() {
-          // Your existing logic to recalculate totals based on the table data
-      }
-  });
-    
-});
-</script> {% endcomment %}
 
 
 <script>
@@ -1471,7 +1157,11 @@ document.getElementById('add').addEventListener('click', function () {
                 </td>
             </tr>`
         );
-        productsearch(roinc)
+        reloadItem2(roinc)
+        initializeProductSearch(roinc)
+        
+        
+       
     });
 });
   $(document).on('change', '.product',function(){ 
@@ -1685,50 +1375,57 @@ function checkphone(element) {
 }
 
 </script>
+<link rel="stylesheet" href="path/to/selectize.css">
+<script src="path/to/selectize.js"></script>
+
 <script>
-  $(document).ready(function () {
-      $('#partySelect').selectize({
-          sortField: 'value',
-          items: [''],
-          render: {
-              item: function (item, escape) {
-                  if (item.value === '') {
-                      return '';
-                  }
-                  return '<div>' + escape(item.text) + '</div>';
-              }
-          }
-      });
-  });
+    $(document).ready(function () {
+        // Initialize partySelect
+        $('#partySelect').selectize({
+            sortField: 'value',
+            items: [''],
+            render: {
+                item: function (item, escape) {
+                    if (item.value === '') {
+                        return '';
+                    }
+                    return '<div>' + escape(item.text) + '</div>';
+                }
+            }
+        });
 
-  $(document).ready(function () {
-      $('.product').selectize({
-          sortField: 'value',
-          items: [''],
-          render: {
-              item: function (item, escape) {
-                  if (item.value === '') {
-                      return '';
-                  }
-                  return '<div>' + escape(item.text) + '</div>';
-              }
-          }
-      });
-  });
+        // Initialize product
+        $('.product').selectize({
+            sortField: 'value',
+            items: [''],
+            render: {
+                item: function (item, escape) {
+                    if (item.value === '') {
+                        return '';
+                    }
+                    return '<div>' + escape(item.text) + '</div>';
+                }
+            }
+        });
 
-  function productsearch(roinc){
-      $(`#product${roinc}`).selectize({
-          sortField: 'value',
-          render: {
-              item: function (item, escape) {
-                  if (item.value === '') {
-                      return '';
-                  }
-                  return '<div>' + escape(item.text) + '</div>';
-              }
-          }
-      });
-  }
+        // Function to initialize productsearch
+        function initializeProductSearch(roinc) {
+            $(`#product${roinc}`).selectize({
+                sortField: 'value',
+                render: {
+                    item: function (item, escape) {
+                        if (item.value === '') {
+                            return '';
+                        }
+                        return '<div>' + escape(item.text) + '</div>';
+                    }
+                }
+            });
+        }
+
+        // Example usage of initializeProductSearch
+        initializeProductSearch('someValue');
+    });
 </script>
 
 <script>
@@ -1771,30 +1468,23 @@ function checkphone(element) {
     function reloadCustomer() {
         $.ajax({
             url: "{% url 'party_dropdown' %}",
-            type: 'GET',
-            success: function (data) {
-                // Assuming the server responds with the correct data format
-                console.log('Party Names Data:', data);
+            type: "GET",
+            dataType: "json",
+            data: $(this).serialize(),
+            csrfmiddlewaretoken: '{{ csrf_token }}',
 
-                // Populate the dropdown with party names
-                var dropdown = $('#repeatSelect');
-                dropdown.empty();  // Clear existing options
-
-                // Add the new options
-                for (var i = 0; i < data.id_list.length; i++) {
-                    dropdown.append($('<option>').text(data.party_list[i]).val(data.id_list[i]));
+            success: function(response) {
+                id_list = response.id_list
+                party_list = response.party_list
+                var $select = $(document.getElementById('partySelect'));
+                var selectize = $select[0].selectize;
+                for(let i=0; i<id_list.length;i++){
+                    selectize.addOption({value:id_list[i],text:party_list[i]});
                 }
+                selectize.setValue("");
             },
-            error: function (xhr, status, error) {
-                console.error('Error fetching party names:', error);
-            }
         });
     }
-
-    // Call the function on document ready to populate the dropdown initially
-    $(document).ready(function () {
-        reloadCustomer();
-    });
 </script>
 
 
@@ -1868,96 +1558,90 @@ $(document).on("change", "#plosu", function(){
 
 
 
-{% comment %} <script>
-  function fetchItemData(selectedItem) {
-    // Make an AJAX request to fetch the HSN number for the selected item
-    $.ajax({
-      type: 'GET',
-      url: '{% url "get_hsn_for_item" %}',  // Replace with the actual URL for fetching HSN
-      data: { 'selectedItem': selectedItem },
-      success: function (data) {
-        // Update the HSN input field with the fetched value
-        $('#hsn1').val(data.hsn);
-        $('#rate1').val(data.rate);
-
-      },
-      error: function (xhr, status, error) {
-        console.error('AJAX request failed:', error);
-      },
-    });
-  }
-</script>  {% endcomment %}
 
 <script>
-    $(document).on("click", "#itemsave", function () {
+    $(document).on("click","#itemsave",function(){
         var item_name = document.getElementById('item_name').value;
-    
+
         if ($('#inclusive').prop('checked')) {
-            tax = $('#inclusive').val();
-        } else {
+            tax= $('#inclusive').val();
+        } 
+        else{
             tax = $('#check').val();
         }
-    
-        if (item_name === '') {
+
+        if (item_name === ''){
             alert('Please provide an Item Name');
-        } else {
+        }else{
             $.ajax({
-                type: 'POST',
-                url: "{% url 'new_creditnote_item' %}",
-                data: {
-                    name: $("#item_name").val(),
-                    unit: $("#unit").val(),
-                    hsn: $("#hsn").val(),
-                    taxref: tax,
-                    sell_price: $("#saleprice").val(),
-                    cost_price: $("#purprice").val(),
-                    intra_st: $("#intra_st").val(),
-                    inter_st: $("#inter_st").val(),
-                    itmdate: $("#itmdate").val(),
-                    stock: $("#stock").val(),
-                    itmprice: $("#itmprice").val(),
-                    minstock: $("#minstock").val(),
+                type : 'POST',
+                url:"{% url 'new_creditnote_item' %}",
+                data:{
+                    name : $("#item_name").val(),
+                    unit : $("#unit").val(),
+                    hsn : $("#hsn").val(),
+                    taxref : tax,
+                    sell_price : $("#saleprice").val(),
+                    cost_price : $("#purprice").val(),
+                    intra_st : $("#intra_st").val(),
+                    inter_st : $("#inter_st").val(),
+                    itmdate : $("#itmdate").val(),
+                    stock : $("#stock").val(),
+                    itmprice : $("#itmprice").val(),
+                    minstock : $("#minstock").val(),
                     csrfmiddlewaretoken: '{{ csrf_token }}',
                 },
-    
-                success: function (response) {
-                    reloadItem();
-                    console.log(response); // Add this line for debugging
+            
+                success: function(response) {
                     document.getElementById("modalItem").reset();
                     $('#newitem').modal('hide');
-                    
+                    reloadItem();
                 },
-            });
-        }
+            });  
+        }      
     });
-    
-    
+
     function reloadItem() {
         $.ajax({
             url: "{% url 'creditnote_item_dropdown' %}",
-            type: "GET",
-            dataType: "json",
-            data: {
-                csrfmiddlewaretoken: '{{ csrf_token }}',
-            },
-            success: function(data) {
-                id_list = data.id_list
-                product_list = data.product_list
-                var table = document.getElementById('tab_logic');
-                var rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-                for (var i = 1; i <= rows.length; i++) {
-                    var $select = $(document.getElementById('product'+i));
-                    var selectize = $select[0].selectize;
-                    for(let i=0; i<id_list.length;i++){
-                        selectize.addOption({value:id_list[i],text:product_list[i]});
-                    }
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                var dropdown = $('#product1');
+                dropdown.empty(); // Clear existing options
+    
+                dropdown.append($('<option>').text('Select Product').attr('value', '').attr('selected', 'selected').attr('hidden', 'hidden'));
+    
+                for (var i = 0; i < data.id_list.length; i++) {
+                    dropdown.append($('<option>').text(data.product_list[i]).attr('value', data.id_list[i]));
                 }
             },
-            error: function(xhr, status, error) {
-                console.error(xhr.responseText);
+            error: function (error) {
+                console.error('Error fetching updated product list:', error);
             }
         });
     }
+    function reloadItem2(selectId) {
+        $.ajax({
+            url: "{% url 'creditnote_item_dropdown' %}",
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                var dropdown = $(`#product${selectId}`);
+                dropdown.empty(); // Clear existing options
+    
+                dropdown.append($('<option>').text('Select Product').attr('value', '').attr('selected', 'selected').attr('hidden', 'hidden'));
+    
+                for (var i = 0; i < data.id_list.length; i++) {
+                    dropdown.append($('<option>').text(data.product_list[i]).attr('value', data.id_list[i]));
+                }
+            },
+            error: function (error) {
+                console.error('Error fetching updated product list:', error);
+            }
+        });
+    }
+    
 </script>
 
 <script>
@@ -2039,11 +1723,74 @@ $(document).on("change", "#plosu", function(){
         });
     });
 });
+</script>
+
+
+
+
+
+<script>
+
+    function updatePartyDetails() {
+        // Get the selected party name
+        var selectedParty = document.getElementById('partySelect').value;
+    
+        
+        var endpoint = '/api/party-details/' + selectedParty; // Update the endpoint accordingly
+    
+        // Fetch party details
+        fetch(endpoint)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Update the input fields with the fetched details
+                if (data) {
+                    // Check if data fields have values
+                    if (data.contact) {
+                        document.getElementById('partyPhone').value = data.contact;
+                        document.getElementById('partyPhonebox').style.display = 'block'; // Show the input box
+                    } else {
+                        document.getElementById('partyPhonebox').style.display = 'none'; // Hide the input box
+                    }
+    
+                    if (data.address) {
+                        document.getElementById('partyAddress').value = data.address;
+                        document.getElementById('partyAddressbox').style.display = 'block'; // Show the input box
+                    } else {
+                        document.getElementById('partyAddressbox').style.display = 'none'; // Hide the input box
+                    }
+    
+                    // Update the opening balance with color based on payment status
+                    var openingBalanceElement = document.getElementById('partyBalance');
+                    openingBalanceElement.innerHTML = 'Balance Amount: <span class="amount">' + data.openingbalance + '</span>';
+    
+                    // Get the amount element within the partyBalance element
+                    var openingBalanceAmountElement = openingBalanceElement.querySelector('.amount');
+    
+                    var paymentStatus = data.payment;
+    
+                    if (paymentStatus === 'To Pay') {
+                        openingBalanceAmountElement.style.color = 'red';
+                    } else if (paymentStatus === 'To Receive') {
+                        openingBalanceAmountElement.style.color = 'green';
+                    } else {
+                        openingBalanceAmountElement.style.color = 'black';
+                    }
+                }
+            })
+            .catch(error => console.error('Error fetching party details:', error));
+    }
+    
+
 
 </script>
 
 
-  {% comment %} <script>
+ <script>
       
 
 
@@ -2077,7 +1824,7 @@ $(document).on("change", "#plosu", function(){
         $('#item_table tbody').append(newRow);
       });
     </script>
-   {% endcomment %}
+   
 
 
   <script>
@@ -2127,10 +1874,10 @@ $(document).on("change", "#plosu", function(){
         });
     });
   </script> 
- 
+   
 
           
-<script>
+ <script>
   $(document).on("submit","#unit_form",function(e){
     e.preventDefault();
   $.ajax({
@@ -2229,7 +1976,7 @@ $(document).on("change", "#plosu", function(){
     $('#prev_btn').on('click',function(){
       $('#prc_').click()
     })
-  })
+  }) 
   // $(document).ready(function(){
   //   $('#prc_').on('click',function(){
   //     alert('asdsad')
@@ -2327,7 +2074,6 @@ $(document).on("change", "#plosu", function(){
     });
   });
   </script>   
-
 
 
 
