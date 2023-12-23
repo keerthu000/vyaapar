@@ -13,8 +13,8 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script> {% endcomment %}
-{% comment %} <link href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/css/select2.min.css" rel="stylesheet" />
-<script src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/js/select2.min.js" defer></script> {% endcomment %}
+<link href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/css/select2.min.css" rel="stylesheet" />
+<script src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/js/select2.min.js" defer></script> 
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -121,36 +121,26 @@
 #toPayRadio {
     accent-color: red;
 }
-{% comment %} /* Style the Select2 container */
-.select2-container {
-  width: 300px; /* Set the width of the dropdown container */
-}
+/* Style the Select2 container */
+
 
 /* Style the Select2 input field */
 .select2-selection__rendered {
   padding: 5px; /* Set the padding for the selected option */
-}
-
-/* Style the Select2 input like Bootstrap form-control */
-.select2-selection {
-  height: auto !important;
-}
-
-/* Apply Bootstrap form-control styles to the input */
-.select2-selection__rendered {
   display: block;
   width: 100%;
   padding: 0.375rem 0.75rem;
   font-size: 1rem;
   font-weight: 400;
   line-height: 1.5;
-  color: #495057;
+  color: #16e0e0;
   background-color: #fff;
   background-clip: padding-box;
-  border: 1px solid #ced4da;
+  border: 1px solid #0cc4f7;
   border-radius: 0.25rem;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
+
 
 /* Style the Select2 dropdown arrow */
 .select2-selection__arrow {
@@ -160,7 +150,7 @@
 
 /* Style the Select2 dropdown list */
 .select2-dropdown {
-  border: 1px solid #ced4da; /* Set the border of the dropdown list */
+  border: 1px solid #16e0e0; /* Set the border of the dropdown list */
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Add a box shadow to the dropdown list */
 }
 
@@ -168,7 +158,7 @@
 .select2-results__option {
   padding: 8px; /* Set the padding for each option */
   cursor: pointer; /* Set the cursor to pointer for better UX */
-} {% endcomment %}
+}
 
     
 </style>
@@ -216,7 +206,7 @@
                                       <div class="col-md-4">
                                           <label class="col-form-label">Party Name</label>
                                           <div class="d-flex">
-                                            <select id="partySelect" name="partyname" onclick="updateSourceOfSupply()" class="form-control border-secondary">
+                                            <select id="partySelect" name="partyname" onclick="updateSourceOfSupply()" class="form-control border-secondary select2">
                                               <option >Select a Party</option>
                                               {% for p in party %}
                                                {% if p.cid_id == cmp.cid %}
@@ -224,6 +214,13 @@
                                                {% endif %}
                                               {% endfor %}
                                             </select> &nbsp;&nbsp;&nbsp;
+                                            <script>
+                                                $(document).ready(function() {
+                                                    console.log('x')
+                                                    $('#partySelect').select2();
+                                                
+                                                  });
+                                            </script> 
                                             <button id="modal_closing" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#partycreation" data-bs-whatever="@mdo">
                                               <span class="fa fa-plus"></span>
                                             </button>
@@ -232,13 +229,19 @@
                                               &nbsp;<span id="ava_balance" style=" color: black;"> Available Balance : <span id="ava_balance"></span></span>
                                           </div>
                                                                             
-                                          <div id="creditNoteSection">
+                                        <div>
                                             <!-- Display sales invoice details here -->
                                             <label class="col-form-label">Invoice No.</label>
-                                            <input type="text" class="form-control border-secondary" id="inv_no" value="" style="color: black; background-color: white;" readonly>
+                                            <select class="form-control border-secondary" name="inv_no" id="inv_no" style="color: black;background-color: white;">
+                                                <option value="" selected hidden>Select</option>
+                                                <!-- Options will be dynamically added here using JavaScript -->
+                                            </select>
                                     
                                             <label class="col-form-label">Invoice Date</label>
-                                            <input type="text" class="form-control border-secondary" id="inv_date" value="" style="color: black; background-color: white;" readonly>
+                                            <select class="form-control border-secondary" name="inv_date" id="inv_date" style="color: black;background-color: white;">
+                                                <option value="" selected hidden>Select</option>
+                                                <!-- Options will be dynamically added here using JavaScript -->
+                                            </select>
                                         </div>
                                       </div>
                                       <div class="col-md-4">
@@ -340,13 +343,13 @@
                                                             </select> &nbsp;&nbsp;&nbsp;
 
 
-                                                            {% comment %} <script>
+                                                          <script>
                                                                 $(document).ready(function() {
                                                                     console.log('x')
                                                                     $('#product1').select2();
                                                                 
                                                                   });
-                                                            </script> {% endcomment %}
+                                                            </script> 
                                                           <button id="openModalBtn" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#newitem" data-bs-whatever="@mdo">
                                                               <span class="fa fa-plus"></span>
                                                           </button>
@@ -1043,6 +1046,7 @@
           selectOptionByValue(destinationSelect, 'Other State');
       }
       handleSourceOfSupply();
+      updateInvoiceDetails();
   }
 </script>
 
@@ -1065,6 +1069,7 @@
                     console.log("Error fetching party details:", error);
                 });
         }
+        updateSourceOfSupply()
     });
 
     // Assuming you want to handle the button click as well
@@ -1158,7 +1163,9 @@
             </tr>`
         );
         reloadItem2(roinc)
-        initializeProductSearch(roinc)
+        //initializeProductSearch(roinc)
+        $(`#product${roinc}`).select2();
+        
         
         
        
@@ -1213,6 +1220,7 @@
             }
         },
     });
+    
 });
 
 $(document).on('click','.remove_row',function(){
@@ -1375,58 +1383,68 @@ function checkphone(element) {
 }
 
 </script>
-<link rel="stylesheet" href="path/to/selectize.css">
-<script src="path/to/selectize.js"></script>
+
 
 <script>
     $(document).ready(function () {
-        // Initialize partySelect
-        $('#partySelect').selectize({
-            sortField: 'value',
-            items: [''],
-            render: {
-                item: function (item, escape) {
-                    if (item.value === '') {
-                        return '';
-                    }
-                    return '<div>' + escape(item.text) + '</div>';
-                }
-            }
-        });
-
-        // Initialize product
-        $('.product').selectize({
-            sortField: 'value',
-            items: [''],
-            render: {
-                item: function (item, escape) {
-                    if (item.value === '') {
-                        return '';
-                    }
-                    return '<div>' + escape(item.text) + '</div>';
-                }
-            }
-        });
-
-        // Function to initialize productsearch
-        function initializeProductSearch(roinc) {
-            $(`#product${roinc}`).selectize({
-                sortField: 'value',
-                render: {
-                    item: function (item, escape) {
-                        if (item.value === '') {
-                            return '';
+        // Event listener for the 'customer' dropdown
+        $('#partySelect').on('change', function () {
+            var customerId = $('#partySelect').val();
+            console.log('customerId', customerId);
+    
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'salesinvoicedata' %}",
+                data: {
+                    id: customerId,
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                },
+                success: function (data) {
+                    // Check the data received from the server
+                    console.log('Server response:', data);
+    
+                    // Clear existing options in the dropdowns
+                    $('#inv_no').empty();
+                    $('#inv_date').empty();
+    
+                    if (data.invoice_numbers && data.invoice_dates) {
+                        for (var i = 0; i < data.invoice_numbers.length; i++) {
+                            $('#inv_no').append($('<option>', {
+                                value: data.invoice_numbers[i],
+                                text: data.invoice_numbers[i]
+                            }));
+                            $('#inv_date').append($('<option>', {
+                                value: data.invoice_dates[i],
+                                text: data.invoice_dates[i]
+                            }));
                         }
-                        return '<div>' + escape(item.text) + '</div>';
+                    } else {
+                        $('#inv_no').append($('<option>', {
+                            value: 'noinvoice',
+                            text: 'No invoice available'
+                        }));
+                        $('#inv_date').append($('<option>', {
+                            value: 'nodate',
+                            text: 'No date available'
+                        }));
                     }
+                },
+                error: function (error) {
+                    // Check for AJAX request errors
+                    console.error('AJAX Error:', error);
                 }
             });
-        }
-
-        // Example usage of initializeProductSearch
-        initializeProductSearch('someValue');
+        });
     });
+    
 </script>
+
+
+
+
+
+
+
 
 <script>
     $(document).on("click", "#customersave", function () {
@@ -1472,17 +1490,19 @@ function checkphone(element) {
             dataType: "json",
             data: $(this).serialize(),
             csrfmiddlewaretoken: '{{ csrf_token }}',
-
-            success: function(response) {
-                id_list = response.id_list
-                party_list = response.party_list
-                var $select = $(document.getElementById('partySelect'));
-                var selectize = $select[0].selectize;
-                for(let i=0; i<id_list.length;i++){
-                    selectize.addOption({value:id_list[i],text:party_list[i]});
+            success: function (data) {
+                var dropdown = $('#partySelect');
+                dropdown.empty(); // Clear existing options
+    
+                dropdown.append($('<option>').text('Select Product').attr('value', '').attr('selected', 'selected').attr('hidden', 'hidden'));
+    
+                for (var i = 0; i < data.id_list.length; i++) {
+                    dropdown.append($('<option>').text(data.party_list[i]).attr('value', data.id_list[i]));
                 }
-                selectize.setValue("");
             },
+            error: function (error) {
+                console.error('Error fetching updated product list:', error);
+            }
         });
     }
 </script>
@@ -1644,86 +1664,7 @@ $(document).on("change", "#plosu", function(){
     
 </script>
 
-<script>
-  $(document).ready(function () {
-    // Event listener for the 'customer' dropdown
-    $('#partySelect').on('change', function () {
-        var customerId = $('#partySelect').val();
 
-        $.ajax({
-            type: 'POST',
-            url: "{% url 'salesinvoicedata' %}",
-            data: {
-                id: customerId,
-                csrfmiddlewaretoken: '{{ csrf_token }}',
-            },
-            success: function (data) {
-                // Clear existing options in the dropdowns
-                $('#inv_no').empty();
-                $('#inv_date').empty();
-
-                if (data.bill_numbers && data.bill_dates) {
-                    for (var i = 0; i < data.bill_numbers.length; i++) {
-                        var optionText = data.bill_numbers[i];
-                        var optionTexts = data.bill_dates[i];
-                        $('#inv_no').append($('<option>', {
-                            value: data.bill_numbers[i],
-                            text: optionText
-                        }));
-                        $('#inv_date').append($('<option>', {
-                            value: data.bill_dates[i],
-                            text: optionTexts
-                        }));
-                    }
-                } else {
-                    $('#inv_no').append($('<option>', {
-                        value: 'No bill',
-                        text: 'No bills available'
-                    }));
-                    $('#inv_date').append($('<option>', {
-                        value: 'No date',
-                        text: 'No date available'
-                    }));
-                }
-            }
-        });
-    });
-
-    // Event listener for the 'bill_no' dropdown
-    $('#inv_no').on('change', function () {
-        var selectedBillNo = $(this).val();
-        console.log(selectedBillNo)
-
-        // Make another AJAX request to get the date for the selected bill number
-        $.ajax({
-            type: 'POST',
-            url: "{% url 'get_inv_date' %}",  // Replace with the actual URL to fetch date
-            data: {
-                bill_no: selectedBillNo,
-                csrfmiddlewaretoken: '{{ csrf_token }}',
-            },
-            success: function (dateData) {
-                // Clear existing options in the 'billdate' dropdown
-                $('#inv_date').empty();
-
-                if (dateData && dateData.bill_date) {
-                    // Append the date option to the 'billdate' dropdown
-                    $('#inv_date').append($('<option>', {
-                        value: dateData.bill_date,
-                        text: dateData.bill_date
-                    }));
-                } else {
-                    // If no date is available, add a default option
-                    $('#inv_date').append($('<option>', {
-                        value: 'No date',
-                        text: 'No date available'
-                    }));
-                }
-            }
-        });
-    });
-});
-</script>
 
 
 

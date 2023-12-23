@@ -5148,46 +5148,32 @@ def update_creditnote(request,id):
   return redirect('creditnote_list')
 
 
-def get_inv_date(request):
-    selected_bill_no = request.POST.get('bill_no', None)
-
-    try:
-        # Get the latest PurchaseBill with the specified bill_number
-        sales_inv =SalesInvoice.objects.filter(invoice_no=selected_bill_no).latest('inv_date')
-        bill_date = sales_inv.date.strftime('%Y-%m-%d')
-    except SalesInvoice.DoesNotExist:
-        return JsonResponse({'error': 'Bill number not found'}, status=400)
-    except SalesInvoice.MultipleObjectsReturned:
-        # Handle the case where multiple PurchaseBills are found for the same bill_number
-        return JsonResponse({'error': 'Multiple PurchaseBills found for the same bill number'}, status=400)
-
-    return JsonResponse({'bill_date': bill_date})
 def salesinvoicedata(request):
     try:
         party_name = request.POST['id']
         party_instance = party.objects.get(id=party_name)
 
-        # Initialize lists to store multiple bill numbers and dates
-        bill_numbers = []
-        bill_dates = []
+        # Initialize lists to store multiple invoice numbers and dates
+        invoice_numbers = []
+        invoice_dates = []
 
         try:
-            # Retrieve all PurchaseBill instances for the party
-            bill_instances = SalesInvoice.objects.filter(party=party_instance)
+            # Retrieve all SalesInvoice instances for the party
+            invoice_instances = SalesInvoice.objects.filter(party=party_instance)
 
-            # Loop through each PurchaseBill instance and collect bill numbers and dates
-            for bill_instance in bill_instances:
-                bill_numbers.append(bill_instance.invoice_no)
-                bill_dates.append(bill_instance.date)
+            # Loop through each SalesInvoice instance and collect invoice numbers and dates
+            for invoice_instance in invoice_instances:
+                invoice_numbers.append(invoice_instance.invoice_no)
+                invoice_dates.append(invoice_instance.date.strftime('%Y-%m-%d'))  # Format date as needed
 
         except SalesInvoice.DoesNotExist:
             pass
 
-        # Return a JSON response with the list of bill numbers and dates
-        if not bill_numbers and not bill_dates:
-            return JsonResponse({'bill_numbers': ['nobill'], 'bill_dates': ['nodate']})
+        # Return a JSON response with the list of invoice numbers and dates
+        if not invoice_numbers and not invoice_dates:
+            return JsonResponse({'invoice_numbers': ['noinvoice'], 'invoice_dates': ['nodate']})
 
-        return JsonResponse({'bill_numbers': bill_numbers, 'bill_dates': bill_dates})
+        return JsonResponse({'invoice_numbers': invoice_numbers, 'invoice_dates': invoice_dates})
 
     except KeyError:
         return JsonResponse({'error': 'The key "id" is missing in the POST request.'})
@@ -5195,7 +5181,9 @@ def salesinvoicedata(request):
     except party.DoesNotExist:
         return JsonResponse({'error': 'Party not found.'})
     
-  
+
+
+    
 
 def  creditnote_item_unit(request):
   if request.method=='POST':
@@ -5232,15 +5220,14 @@ def  credititemdetails(request):
 
 def creditnote_item_dropdown(request):
   sid = request.session.get('staff_id')
-  staff =  staff_details.objects.get(id=sid)
+  staff = staff_details.objects.get(id=sid)
   cmp = company.objects.get(id=staff.company.id)
+  product = ItemModel.objects.filter(company=cmp, user=cmp.user)
 
-  options = {}
-  option_objects = ItemModel.objects.filter(company=cmp,user=cmp.user)
-  for option in option_objects:
-      options[option.id] = [option.item_name]
-  return JsonResponse(options)
+  id_list = [p.id for p in product]
+  product_list = [p.item_name for p in product]
 
+  return JsonResponse({'id_list': id_list, 'product_list': product_list})
 
 
 
