@@ -1385,58 +1385,56 @@ function checkphone(element) {
 </script>
 
 
-<script>
+<script type="text/javascript">
     $(document).ready(function () {
-        // Event listener for the 'customer' dropdown
-        $('#partySelect').on('change', function () {
-            var customerId = $('#partySelect').val();
-            console.log('customerId', customerId);
-    
-            $.ajax({
-                type: 'POST',
-                url: "{% url 'salesinvoicedata' %}",
-                data: {
-                    id: customerId,
-                    csrfmiddlewaretoken: '{{ csrf_token }}',
-                },
-                success: function (data) {
-                    // Check the data received from the server
-                    console.log('Server response:', data);
-    
-                    // Clear existing options in the dropdowns
-                    $('#inv_no').empty();
-                    $('#inv_date').empty();
-    
-                    if (data.invoice_numbers && data.invoice_dates) {
-                        for (var i = 0; i < data.invoice_numbers.length; i++) {
+        $("#partySelect").change(function () {
+            var party_name = $(this).val();
+            if (party_name) {
+                // Make an AJAX request to get sales invoice details
+                $.ajax({
+                    type: 'POST',
+                    url: "{% url 'salesinvoicedata' %}",
+                    data: {
+                        id: party_name,
+                        csrfmiddlewaretoken: '{{ csrf_token }}',
+                    },
+                    success: function (data) {
+                        // Clear existing options in the invoice dropdowns
+                        $('#inv_no').empty();
+                        $('#inv_date').empty();
+
+                        if (data.invoice_numbers && data.invoice_dates) {
+                            // Populate the invoice dropdowns with the retrieved data
+                            for (var i = 0; i < data.invoice_numbers.length; i++) {
+                                $('#inv_no').append($('<option>', {
+                                    value: data.invoice_numbers[i],
+                                    text: data.invoice_numbers[i]
+                                }));
+                                $('#inv_date').append($('<option>', {
+                                    value: data.invoice_dates[i],
+                                    text: data.invoice_dates[i]
+                                }));
+                            }
+                        } else {
+                            // If no invoices are available
                             $('#inv_no').append($('<option>', {
-                                value: data.invoice_numbers[i],
-                                text: data.invoice_numbers[i]
+                                value: 'noinvoice',
+                                text: 'No invoice available'
                             }));
                             $('#inv_date').append($('<option>', {
-                                value: data.invoice_dates[i],
-                                text: data.invoice_dates[i]
+                                value: 'nodate',
+                                text: 'No date available'
                             }));
                         }
-                    } else {
-                        $('#inv_no').append($('<option>', {
-                            value: 'noinvoice',
-                            text: 'No invoice available'
-                        }));
-                        $('#inv_date').append($('<option>', {
-                            value: 'nodate',
-                            text: 'No date available'
-                        }));
+                    },
+                    error: function (error) {
+                        // Check for AJAX request errors
+                        console.error('AJAX Error:', error);
                     }
-                },
-                error: function (error) {
-                    // Check for AJAX request errors
-                    console.error('AJAX Error:', error);
-                }
-            });
+                });
+            }
         });
     });
-    
 </script>
 
 

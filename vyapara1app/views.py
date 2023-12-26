@@ -5149,25 +5149,21 @@ def update_creditnote(request,id):
 
 
 def salesinvoicedata(request):
-    try:
-        party_name = request.POST['id']
-        party_instance = party.objects.get(id=party_name)
+      try:
+        selected_party_id = request.POST.get('id')
+        party_instance = get_object_or_404(party, id=selected_party_id)
 
         # Initialize lists to store multiple invoice numbers and dates
         invoice_numbers = []
         invoice_dates = []
 
-        try:
-            # Retrieve all SalesInvoice instances for the party
-            invoice_instances = SalesInvoice.objects.filter(party=party_instance)
+        # Retrieve all SalesInvoice instances for the party
+        invoice_instances = SalesInvoice.objects.filter(party=party_instance)
 
-            # Loop through each SalesInvoice instance and collect invoice numbers and dates
-            for invoice_instance in invoice_instances:
-                invoice_numbers.append(invoice_instance.invoice_no)
-                invoice_dates.append(invoice_instance.date.strftime('%Y-%m-%d'))  # Format date as needed
-
-        except SalesInvoice.DoesNotExist:
-            pass
+        # Loop through each SalesInvoice instance and collect invoice numbers and dates
+        for invoice_instance in invoice_instances:
+            invoice_numbers.append(invoice_instance.invoice_no)
+            invoice_dates.append(invoice_instance.date.strftime('%Y-%m-%d'))  # Format date as needed
 
         # Return a JSON response with the list of invoice numbers and dates
         if not invoice_numbers and not invoice_dates:
@@ -5175,12 +5171,8 @@ def salesinvoicedata(request):
 
         return JsonResponse({'invoice_numbers': invoice_numbers, 'invoice_dates': invoice_dates})
 
-    except KeyError:
-        return JsonResponse({'error': 'The key "id" is missing in the POST request.'})
-
-    except party.DoesNotExist:
-        return JsonResponse({'error': 'Party not found.'})
-    
+      except party.DoesNotExist:
+        return JsonResponse({'error': 'Party not found'})
 
 
     
