@@ -333,7 +333,7 @@
   
                                                       <td style="width:21%">
                                                           <div class="d-flex">
-                                                            <select name='product[]' id="product1" class="form-control border-secondary product select2"  onchange="changeprd(this.id,this.value)" style="color: black; background-color: white;">
+                                                            <select name='product[]' id="product1" class="form-control border-secondary product productname select2 "  style="color: black; background-color: white;">
                                                                 <option value="" selected hidden>Select </option>
                                                                 {% for i in item %}
                                                                    
@@ -343,10 +343,10 @@
                                                             </select> &nbsp;&nbsp;&nbsp;
 
 
-                                                          <script>
+                                                            <script>
                                                                 $(document).ready(function() {
-                                                                    console.log('x')
-                                                                    $('#product1').select2();
+                                                                    
+                                                                    $('.productname').select2();
                                                                 
                                                                   });
                                                             </script> 
@@ -1054,7 +1054,7 @@
 
 
 
-<script type="text/javascript">
+{% comment %} <script type="text/javascript">
   $(document).ready(function () {
     $("#partySelect").change(function () {
         var party_name = $(this).val();
@@ -1069,8 +1069,9 @@
                     console.log("Error fetching party details:", error);
                 });
         }
-        updateSourceOfSupply()
+        
     });
+
 
     // Assuming you want to handle the button click as well
     $(".add-party-btn").click(function () {
@@ -1078,7 +1079,7 @@
     });
 });
 
-</script> 
+</script>  {% endcomment %}
 
 
 
@@ -1171,8 +1172,11 @@
        
     });
 });
+
   $(document).on('change', '.product',function(){ 
     var n = $(this).attr("id").slice(7);
+   
+    console.log('value',$(this).val())
     $.ajax({
         url: "{% url 'get_hsn_for_item' %}",
         type : 'GET',
@@ -1402,6 +1406,8 @@ function checkphone(element) {
                         // Clear existing options in the invoice dropdowns
                         $('#inv_no').empty();
                         $('#inv_date').empty();
+                        $("#partyPhoneNumber").val(data.phone);
+                        $("#ava_balance").text(data.balance);
 
                         if (data.invoice_numbers && data.invoice_dates) {
                             // Populate the invoice dropdowns with the retrieved data
@@ -1433,6 +1439,7 @@ function checkphone(element) {
                     }
                 });
             }
+            updateSourceOfSupply()
         });
     });
 </script>

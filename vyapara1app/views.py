@@ -4846,14 +4846,14 @@ def get_hsn_for_item(request):
 
 
 
-def get_party_number(request):
-    selected_party_id = request.GET.get('partyname')
-    party_instance = get_object_or_404(party, id=selected_party_id)
-    phone_number = party_instance.contact
-    party_id = party_instance.id
-    balnce =party_instance.openingbalance
+# def get_party_number(request):
+#     selected_party_id = request.GET.get('partyname')
+#     party_instance = get_object_or_404(party, id=selected_party_id)
+#     phone_number = party_instance.contact
+#     party_id = party_instance.id
+#     balnce =party_instance.openingbalance
     
-    return JsonResponse({'phone': phone_number, 'id': party_id,'balance':balnce})
+#     return JsonResponse({'phone': phone_number, 'id': party_id,'balance':balnce})
 
 
 # @login_required(login_url='login')
@@ -5151,14 +5151,21 @@ def update_creditnote(request,id):
 def salesinvoicedata(request):
       try:
         selected_party_id = request.POST.get('id')
+        print('id',selected_party_id)
         party_instance = get_object_or_404(party, id=selected_party_id)
-
+        print('instance',party_instance)
+        phone_number = party_instance.contact
+        party_id = party_instance.id
+        balnce =party_instance.openingbalance
+    
+    
         # Initialize lists to store multiple invoice numbers and dates
         invoice_numbers = []
         invoice_dates = []
 
         # Retrieve all SalesInvoice instances for the party
         invoice_instances = SalesInvoice.objects.filter(party=party_instance)
+        print('invoice_instances',invoice_instances)
 
         # Loop through each SalesInvoice instance and collect invoice numbers and dates
         for invoice_instance in invoice_instances:
@@ -5167,9 +5174,9 @@ def salesinvoicedata(request):
 
         # Return a JSON response with the list of invoice numbers and dates
         if not invoice_numbers and not invoice_dates:
-            return JsonResponse({'invoice_numbers': ['noinvoice'], 'invoice_dates': ['nodate']})
+            return JsonResponse({'invoice_numbers': ['noinvoice'], 'invoice_dates': ['nodate'],'phone': phone_number, 'id': party_id,'balance':balnce})
 
-        return JsonResponse({'invoice_numbers': invoice_numbers, 'invoice_dates': invoice_dates})
+        return JsonResponse({'invoice_numbers': invoice_numbers, 'invoice_dates': invoice_dates,'phone': phone_number, 'id': party_id,'balance':balnce})
 
       except party.DoesNotExist:
         return JsonResponse({'error': 'Party not found'})
