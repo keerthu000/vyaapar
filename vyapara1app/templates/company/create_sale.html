@@ -19,6 +19,8 @@
 <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.13.3/js/standalone/selectize.min.js"></script>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
 
 
 
@@ -159,7 +161,11 @@
   padding: 8px; /* Set the padding for each option */
   cursor: pointer; /* Set the cursor to pointer for better UX */
 }
-
+.selectize-input {
+    height: 5vh;
+    border-color: #54B4D3;
+    border-radius: 5px;
+}
     
 </style>
 
@@ -216,11 +222,14 @@
                                             </select> &nbsp;&nbsp;&nbsp;
                                             <script>
                                                 $(document).ready(function() {
-                                                    console.log('x')
+                                                    
                                                     $('#partySelect').select2();
                                                 
                                                   });
-                                            </script> 
+
+
+                                            </script>
+                                          
                                             <button id="modal_closing" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#partycreation" data-bs-whatever="@mdo">
                                               <span class="fa fa-plus"></span>
                                             </button>
@@ -333,7 +342,7 @@
   
                                                       <td style="width:21%">
                                                           <div class="d-flex">
-                                                            <select name='product[]' id="product1" class="form-control border-secondary product productname select2 "  style="color: black; background-color: white;">
+                                                            <select name='product[]' id="product1" class="form-control border-secondary product productname select2 "  style="color: black; background-color: white;" onchange="changeprd(this.id,this.value)">
                                                                 <option value="" selected hidden>Select </option>
                                                                 {% for i in item %}
                                                                    
@@ -342,14 +351,43 @@
                                                                 {% endfor %}
                                                             </select> &nbsp;&nbsp;&nbsp;
 
-
-                                                            <script>
-                                                                $(document).ready(function() {
-                                                                    
-                                                                    $('.productname').select2();
-                                                                
-                                                                  });
-                                                            </script> 
+                                                <script src="path/to/selectize.js"></script>            
+                                                <script>
+                                                    $(document).ready(function () {
+                                                        $('.productname').selectize({
+                                                            sortField: 'value',
+                                                            items: [''],
+                                                            render: {
+                                                                item: function (item, escape) {
+                                                                    if (item.value === '') {
+                                                                        return '';
+                                                                    }
+                                                                    return '<div>' + escape(item.text) + '</div>';
+                                                                }
+                                                            }
+                                                        });
+                                                        
+                                                    });
+                                                    $(document).ready(function() {
+                                                        // Call the productsearch function after the document is ready
+                                                        productsearch(roinc);
+                                                    });
+                                                
+                                                    function productsearch(roinc){
+                                                        $(`#productname${roinc}`).selectize({
+                                                            sortField: 'value',
+                                                            render: {
+                                                                item: function (item, escape) {
+                                                                    if (item.value === '') {
+                                                                        return '';
+                                                                    }
+                                                                    return '<div>' + escape(item.text) + '</div>';
+                                                                }
+                                                            }
+                                                        });
+                                                    }
+                                                </script>   
+                                                           
                                                           <button id="openModalBtn" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#newitem" data-bs-whatever="@mdo">
                                                               <span class="fa fa-plus"></span>
                                                           </button>
@@ -1095,7 +1133,7 @@
 
                 <td style="width:21%">
                     <div class="d-flex">
-                        <select name='product[]' id="product${roinc}" class="form-control border-secondary product"  onchange="changeprd(this.id)" style="color: black; background-color: white;">
+                        <select name='product[]' id="product${roinc}" class="form-control border-secondary product"  onchange="changeprd(this.id,this.value)" style="color: black; background-color: white;">
                             <option value="" selected hidden>Select Product</option>
                             {% for i in item %}
                                 {% if i.cid_id == cmp.cid %}
@@ -1164,26 +1202,23 @@
             </tr>`
         );
         reloadItem2(roinc)
-        //initializeProductSearch(roinc)
-        $(`#product${roinc}`).select2();
+        ProductSearch(roinc).selectize();
+       // $(`#product${roinc}`).select2();
         
         
         
        
     });
 });
-
-  $(document).on('change', '.product',function(){ 
-    var n = $(this).attr("id").slice(7);
-   
-    console.log('value',$(this).val())
+function changeprd(id,value){
+    var n = id.slice(7);
     $.ajax({
         url: "{% url 'get_hsn_for_item' %}",
         type : 'GET',
         data:{
-            id : $(this).val(),
+            id : value,
             csrfmiddlewaretoken: '{{ csrf_token }}'
-            },
+        },
         
         success: function(response) {
             data = response.hsn
@@ -1191,41 +1226,32 @@
             data3 = response.price
             data4 = response.gst
             data5 = response.igst
-
-            document.getElementById('hsn'+n).value = data;
-            document.getElementById('unit'+n).value = data3;
-            document.getElementById('intrataxval'+n).value = data4;
-            document.getElementById('intertaxval'+n).value = data5;
-            document.getElementById('select_tax'+n).style.display = 'none';
             var bc = document.getElementById("plosu").value;
-            if (bc == 'State' ) {
-                var taxes = document.getElementsByClassName('seltax');
-                $(`#tax2${n}`).removeClass('d-flex');
-                $(`#tax2${n}`).addClass('d-none');
-                $(`#tax1${n}`).removeClass('d-none');
-                $(`#tax1${n}`).addClass('d-flex');
-                if (data4 != ' '){
-                    document.getElementById('tax1'+n).value = data4;
-                }else{
-                    document.getElementById('tax1'+n).value = ' ';
-                }
-                        
-            } else {
-                var taxes = document.getElementsByClassName('seltax');
-                $(`#tax1${n}`).removeClass('d-flex');
-                $(`#tax1${n}`).addClass('d-none');
-                $(`#tax2${n}`).removeClass('d-none');
-                $(`#tax2${n}`).addClass('d-flex');
-                if(data5 != ' '){
-                    document.getElementById('tax2'+n).value = data5;
-                }else{
-                    document.getElementById('tax2'+n).value = ' ';
-                }
+            if (bc == 'State') {
+                document.getElementById('intrataxval'+n).value = data4;
+                document.getElementById('intertaxval'+n).value = data5;
+                document.getElementById('hsn'+n).value = data;
+                document.getElementById('unit'+n).value = data3;
+                document.getElementById('tax'+n).value = data4;
+                calc()
+            } else if (bc == 'Other State') {
+                document.getElementById('intrataxval'+n).value = data4;
+                document.getElementById('intertaxval'+n).value = data5;
+                document.getElementById('hsn'+n).value = data;
+                document.getElementById('unit'+n).value = data3;
+                document.getElementById('tax'+n).value = data5;
+                calc()
+            }else{
+                alert('Please Select Place of Supply')
+                var $select = $(document.getElementById('product'+n));
+                var selectize = $select[0].selectize;
+                selectize.setValue("");
             }
         },
     });
-    
-});
+    updateSourceOfSupply()
+
+}
 
 $(document).on('click','.remove_row',function(){
     var row_id = $(this).attr("id");
