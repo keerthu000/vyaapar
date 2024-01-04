@@ -27,7 +27,7 @@ from django.utils.html import strip_tags
 from django.conf import settings
 from io import BytesIO
 from xhtml2pdf import pisa
-
+from django.core.mail import send_mail, EmailMessage
 
 
 # Create your views here.
@@ -4725,7 +4725,7 @@ def create_sale(request):
       
     context = {'staff':staff, 'allmodules':allmodules, 'party':Party, 'cmp':cmp,'credit_note':credit_note,'tod':tod,'item':item, 'item_units':item_units,'bank':bank}
     return render(request, 'company/create_sale.html', context)
-
+from datetime import datetime
 def add_creditnote(request):
   if request.method == 'POST':
     sid = request.session.get('staff_id')
@@ -4737,9 +4737,12 @@ def add_creditnote(request):
     return_no=request.POST.get('creditno')
     partmob=request.POST.get('partyPhoneNumber')
     creditdate=request.POST.get('cr_date')
+    invoiceno=request.POST.get('inv_no')
+  
     invoice_date=request.POST.get('inv_date')
+    
     supplyplace =request.POST.get('destination')
-    pay_method=request.POST.get("payment_method")
+    pay_method=request.POST.get("method")
     cheque_no=request.POST.get("cheque_id")
     upi_no=request.POST.get("upi_id")
     bank_acc=request.POST.get("bnk_id")
@@ -4754,7 +4757,7 @@ def add_creditnote(request):
     grandtotal=request.POST.get('grandtotal')
     descptn=request.POST.get('description')
     creditnote=CreditNote(party=part,retrn_no = return_no,partymob=partmob,date=creditdate,invoice_date=invoice_date,
-                          supplyplace=supplyplace,pay_method=pay_method,cheque_no=cheque_no,upi_no=upi_no,
+                         invoiceno=invoiceno,supplyplace=supplyplace,pay_method=pay_method,cheque_no=cheque_no,upi_no=upi_no,
                           bankaccount=bank_acc, subtotal=subtotal,advance=advance, balance=balance, igst=igst,
                           cgst=cgst,sgst=sgst,adjust=adjust,taxamount=taxamount,grandtotal=grandtotal, description=descptn,
                           company=cmp,staff=staff,)
@@ -4846,24 +4849,6 @@ def get_hsn_for_item(request):
 
 
 
-# def get_party_number(request):
-#     selected_party_id = request.GET.get('partyname')
-#     party_instance = get_object_or_404(party, id=selected_party_id)
-#     phone_number = party_instance.contact
-#     party_id = party_instance.id
-#     balnce =party_instance.openingbalance
-    
-#     return JsonResponse({'phone': phone_number, 'id': party_id,'balance':balnce})
-
-
-# @login_required(login_url='login')
-# def get_party_balance(request):
-#     selected_party = request.GET.get('partyname')
-#     party_instance = get_object_or_404(party, party_name=selected_party)
-#     balnce = party_instance.openingbalance
-#     return JsonResponse({'balance':balnce})
-
-# 
 
 
 def creditnote_list(request):
@@ -5090,7 +5075,10 @@ def edit_creditnote(request,id):
 
 
   if credit.pay_method != 'Cash' and credit.pay_method != 'Cheque' and credit.pay_method != 'UPI':
-    bankno = BankModel.objects.get(id= credit.pay_method,company=cmp,user=cmp.user)
+    try:
+     bankno = BankModel.objects.get(id=credit.pay_method,company=cmp,user=cmp.user)
+    except BankModel.DoesNotExist:
+      bankno = 0
   else:
     bankno = 0
 
@@ -5127,10 +5115,12 @@ def update_creditnote(request,id):
 
     product = tuple(request.POST.getlist("product[]"))
     qty = tuple(request.POST.getlist("qty[]"))
-    if request.POST.get('placosupply') == 'State':
+    if request.POST.get('destination') == 'State':
       tax =tuple( request.POST.getlist("tax1[]"))
+      print(tax)
     else:
       tax = tuple(request.POST.getlist("tax2[]"))
+      print(tax)
     total = tuple(request.POST.getlist("total[]"))
     discount = tuple(request.POST.getlist("discount[]"))
 
@@ -5170,7 +5160,7 @@ def salesinvoicedata(request):
         # Loop through each SalesInvoice instance and collect invoice numbers and dates
         for invoice_instance in invoice_instances:
             invoice_numbers.append(invoice_instance.invoice_no)
-            invoice_dates.append(invoice_instance.date.strftime('%Y-%m-%d'))  # Format date as needed
+            invoice_dates.append(invoice_instance.date)  # Format date as needed
 
         # Return a JSON response with the list of invoice numbers and dates
         if not invoice_numbers and not invoice_dates:
@@ -5179,7 +5169,8 @@ def salesinvoicedata(request):
         return JsonResponse({'invoice_numbers': invoice_numbers, 'invoice_dates': invoice_dates,'phone': phone_number, 'id': party_id,'balance':balnce})
 
       except party.DoesNotExist:
-        return JsonResponse({'error': 'Party not found'})
+        return JsonResponse({'error': 'Party not found'}) 
+
 
 
     
@@ -5231,7 +5222,44 @@ def creditnote_item_dropdown(request):
 
 
 
+def sharecreditnoteToEmail(request,id):
+  if request.user:
+        try:
+            if request.method == 'POST':
+                emails_string = request.POST['email_ids']
 
+    
+                emails_list = [email.strip() for email in emails_string.split(',')]
+                email_message = request.POST['email_message']
+                print(emails_list)
+
+                sid = request.session.get('staff_id')
+                staff =  staff_details.objects.get(id=sid)
+                cmp = company.objects.get(id=staff.company.id) 
+               
+                credit = CreditNote.objects.get(id=id,company=cmp)
+                creditnoteitem = CreditNoteItem.objects.filter(creditnote=credit,company=cmp)
+                        
+                context = {'credit':credit, 'cmp':cmp,'creditnoteitem':creditnoteitem}
+                template_path = 'company/creditnoteshare.html'
+                template = get_template(template_path)
+
+                html  = template.render(context)
+                result = BytesIO()
+                pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
+                pdf = result.getvalue()
+                filename = f'CREDITNOTE - {credit.retrn_no}.pdf'
+                subject = f"CREDITNOTE - {credit.retrn_no}"
+                email = EmailMessage(subject, f"Hi,\nPlease find the attached INVOICE - File-{credit.retrn_no}. \n{email_message}\n\n--\nRegards,\n{cmp.company_name}\n{cmp.address}\n{cmp.state} - {cmp.country}\n{cmp.contact}", from_email=settings.EMAIL_HOST_USER, to=emails_list)
+                email.attach(filename, pdf, "application/pdf")
+                email.send(fail_silently=False)
+
+                msg = messages.success(request, 'Invoice file has been shared via email successfully..!')
+                return redirect(detail_creditnote,id)
+        except Exception as e:
+            print(e)
+            messages.error(request, f'{e}')
+            return redirect(detail_creditnote, id)
 
 
 
