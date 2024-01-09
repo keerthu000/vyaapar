@@ -28,6 +28,8 @@ from django.conf import settings
 from io import BytesIO
 from xhtml2pdf import pisa
 from django.core.mail import send_mail, EmailMessage
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 
 
 # Create your views here.
@@ -4851,20 +4853,34 @@ def get_hsn_for_item(request):
 
 
 
-def creditnote_list(request):
-  sid = request.session.get('staff_id')
-  staff =  staff_details.objects.get(id=sid)
-  cmp = company.objects.get(id=staff.company.id)
-  allmodules= modules_list.objects.get(company=cmp,status='New')
-  Part = party.objects.filter(company=cmp,user=cmp.user)
-  credit = CreditNote.objects.filter(company=cmp)
 
-  if not credit:
-    context = {'staff':staff, 'allmodules':allmodules,'party':Part}
-    return render(request,'company/salesfirst.html',context)
-  
-  context = {'staff':staff,'allmodules':allmodules,'credit':credit,'party':Part}
-  return render(request,'company/creditlist.html',context)
+
+def creditnote_list(request):
+    sid = request.session.get('staff_id')
+    staff = staff_details.objects.get(id=sid)
+    cmp = company.objects.get(id=staff.company.id)
+    allmodules = modules_list.objects.get(company=cmp, status='New')
+    Part = party.objects.filter(company=cmp, user=cmp.user)
+    credit = CreditNote.objects.filter(company=cmp)
+       
+    for i in credit:
+        last_transaction = CreditNoteTransactionHistory.objects.filter(creditnote=i).last()
+        if last_transaction:
+            i.action = last_transaction.action
+            
+        else:
+            i.action = None
+            
+
+    if not credit:
+        context = {'staff': staff, 'allmodules': allmodules, 'party': Part}
+        return render(request, 'company/salesfirst.html', context)
+
+
+    context = {'staff': staff, 'allmodules': allmodules, 'credit': credit, 'party': Part,}
+    return render(request, 'company/creditlist.html', context)
+
+
 
 
 
@@ -4954,13 +4970,13 @@ def detail_creditnote(request,id):
 #   return JsonResponse({'name':name,'action':action,'pid':pid})
 
 def import_creditnote(request):
-  if request.method == 'POST' and request.FILES['billfile']  and request.FILES['prdfile']:
+  if request.method == 'POST' and request.FILES['creditfile']  and request.FILES['prdfile']:
     sid = request.session.get('staff_id')
     staff =  staff_details.objects.get(id=sid)
     cmp = company.objects.get(id=staff.company.id)
     totval = int(CreditNote.objects.filter(company=cmp).last().tot_bill_no) + 1
 
-    excel_bill = request.FILES['billfile']
+    excel_bill = request.FILES['creditfile']
     excel_b = load_workbook(excel_bill)
     eb = excel_b['Sheet1']
     excel_prd = request.FILES['prdfile']
@@ -5171,7 +5187,22 @@ def salesinvoicedata(request):
       except party.DoesNotExist:
         return JsonResponse({'error': 'Party not found'}) 
 
+@require_POST
+@csrf_exempt
+def get_Invoice_date(request):
+    selected_inv_no = request.POST.get('inv_no', None)
 
+    try:
+        # Get the latest PurchaseBill with the specified bill_number
+        salesinvoice = SalesInvoice.objects.filter(invoice_no=selected_inv_no).latest('inv_date')
+        inv_date = salesinvoice.date.strftime('%Y-%m-%d')
+    except SalesInvoice.DoesNotExist:
+        return JsonResponse({'error': 'invoice not found'}, status=400)
+    except SalesInvoice.MultipleObjectsReturned:
+        # Handle the case where multiple PurchaseBills are found for the same bill_number
+        return JsonResponse({'error': 'Multiple PurchaseBills found for the same bill number'}, status=400)
+
+    return JsonResponse({'inv_date': inv_date})
 
     
 

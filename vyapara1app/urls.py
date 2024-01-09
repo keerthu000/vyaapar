@@ -219,25 +219,26 @@ urlpatterns = [
     path('create_sale', views.create_sale, name='create_sale'),
     path('new_creditnote_item', views.new_creditnote_item, name='new_creditnote_item'),
     path('get_hsn_for_item',views.get_hsn_for_item,name='get_hsn_for_item'),
-    path('get_party_number',views.get_party_number,name='get_party_number'),
-    #path('get_party_balance',views.get_party_balance,name='get_party_balance'),
-    # path('state_supply',views.state_supply,name='state_supply'),
+   
     path('creditnote_list',views.creditnote_list,name='creditnote_list'),
     path('party_dropdown',views.party_dropdown,name='party_dropdown'),
     path('saveparty',views.saveparty,name='saveparty'),
     path('credit_bankdetails',views.credit_bankdetails,name='credit_bankdetails'),
     path('add_creditnote',views.add_creditnote,name='add_creditnote'),
     path('detail_creditnote/<int:id>/',views.detail_creditnote,name='detail_creditnote'),
-    # path('creditnotehistory',views.creditnotehistory,name='creditnotehistory'),
+    #path('creditnotehistory',views.creditnotehistory,name='creditnotehistory'),
     path('import_creditnote',views.import_creditnote,name='import_creditnote'),
     path('delete_CreditNote/<int:id>/', views.delete_CreditNote, name='delete_CreditNote'),
     path('creditnote_item_unit',views.creditnote_item_unit,name='creditnote_item_unit'),
     path('edit_creditnote/<int:id>/',views.edit_creditnote,name='edit_creditnote'),
     path('salesinvoicedata',views.salesinvoicedata,name='salesinvoicedata'),
-    path('get_inv_date',views.get_inv_date,name='get_inv_date'),
+  
     path('update_creditnote/<int:id>/',views.update_creditnote,name='update_creditnote'),
     path('history_creditnote/<int:id>',views.history_creditnote,name='history_creditnote'),
     path('credititemdetails',views.credititemdetails,name='credititemdetails'),
+    path('creditnote_item_dropdown',views.creditnote_item_dropdown,name='creditnote_item_dropdown'),
+    path('sharecreditnoteToEmail/<int:id>',views.sharecreditnoteToEmail,name='sharecreditnoteToEmail'),
+    path('get_Invoice_date',views.get_Invoice_date,name='get_Invoice_date'),
 
 
 

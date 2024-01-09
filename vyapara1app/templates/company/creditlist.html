@@ -261,13 +261,8 @@
                     <td class="clickable-row" style="color: black;" data-href="detail_creditnote/{{ c.id }}">{{c.grandtotal}}</td>
                     <td class="clickable-row" style="color: black;" data-href="detail_creditnote/{{ c.id }}">{{c.balance}}</td>
                     
-                     <!-- New column for displaying the latest transaction action for each credit note -->
-                    <td class="clickable-row extra" style="color: black;">
-                        {% for action in latest_actions %}
-                            {% if action.creditnote == c %}
-                                {{ action.action }}
-                            {% endif %}
-                        {% endfor %}
+                    <td class="clickable-row extra" style="color: black;"  data-href="detail_creditnote/{{ c.id }}">
+                       {{c.action}}
                     </td>
         
                    
@@ -547,12 +542,16 @@
         });
     }
 </script>  {% endcomment %}
+
+
+
+
 <script>
-    function cleardropdown(index){
-        if(index == 0){
-            document.getElementById('filterInput'+index).value = '';
-        }else{
-            document.getElementById('filterInput'+index).value = null;
+    function cleardropdown(index) {
+        if (index == 0) {
+            document.getElementById('filterInput' + index).value = '';
+        } else {
+            document.getElementById('filterInput' + index).value = null;
         }
     }
 
@@ -567,38 +566,29 @@
     }
 
     function filterTable(index) {
+       
         var input;
         document.getElementById('dropdownContent' + index).style.display = 'none';
+        
         if (index === 0) {
+          
             input = document.getElementById('filterInput' + index).value;
-        } else {
-            input = document.getElementById('filterInput' + index).value.toUpperCase();
-        }
-    
-        console.log('Input:', input);
-    
-        var table = document.getElementById('billtable');
-        var rows = table.getElementsByTagName('tr');
-        var emptyMessage = document.getElementById('emptyMessage');
-        var isEmpty = true;
-    
-        for (var i = 1; i < rows.length; i++) {
-            var cells = rows[i].getElementsByTagName('td');
-            var cell = cells[index];
-    
-            if (cell) {
-                var textValue = cell.textContent || cell.innerText;
-    
-                if (index === 0) {
-                    console.log('Date Value:', textValue);
+            const formattedDate = formatDateString(input);
+            var table = document.getElementById('billtable');
+            var rows = table.getElementsByTagName('tr');
+            var emptyMessage = document.getElementById('emptyMessage');
+            var isEmpty = true;
+            for (var i = 1; i < rows.length; i++) {
+                var cells = rows[i].getElementsByTagName('td');
+                var cell = cells[index+1];
+                if (cell) {
+                    var textValue = cell.textContent || cell.innerText;
                     if (input == '') {
                         rows[i].style.display = 'table-row';
                         isEmpty = false;
                     } else {
                         dateval = textValue.replace(/(\d{2})-(\d{2})-(\d{2})/, "$2-$1-$3");
                         inputval = input.replace(/(\d{2})-(\d{2})-(\d{2})/, "$2-$1-$3");
-                        const formattedDate = formatDateString(input);
-                        console.log('Formatted Date:', formattedDate);
                         if (dateval === formattedDate) {
                             rows[i].style.display = 'table-row';
                             isEmpty = false;
@@ -606,9 +596,24 @@
                             rows[i].style.display = 'none';
                         }
                     }
-                } else {
-                    console.log('Text Value:', textValue);
+                }
+            }
+        } else {
+            
+            input = document.getElementById('filterInput' + index).value.toUpperCase();
+            var table = document.getElementById('billtable');
+            var rows = table.getElementsByTagName('tr');
+            var emptyMessage = document.getElementById('emptyMessage');
+            var isEmpty = true;
+            for (var i = 0; i < rows.length; i++) {
+                var cells = rows[i].getElementsByTagName('td');
+                var cell = cells[index+1];
+                if (cell) {
+                   
+                    var textValue = cell.textContent || cell.innerText;
+                    console.log(textValue,input)
                     if (textValue.toUpperCase().includes(input)) {
+                        console.log('x',index)
                         rows[i].style.display = 'table-row';
                         isEmpty = false;
                     } else {
@@ -617,12 +622,9 @@
                 }
             }
         }
-    
-        console.log('Is Empty:', isEmpty);
         emptyMessage.style.display = isEmpty ? 'block' : 'none';
-        calculatetotal();
     }
-    
+
     function formatDateString(inputDate) {
         const parsedDate = new Date(inputDate);
         const day = parsedDate.getDate();
@@ -632,6 +634,9 @@
         return formattedDate;
     }
 </script>
+
+
+
 
 <script>
     function printfunction(){
