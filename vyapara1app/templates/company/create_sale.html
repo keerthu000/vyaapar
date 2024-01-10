@@ -28,17 +28,17 @@
 <style>
 
   .table{
-    width:95%;
-    margin-left:25px;
+    width:100%;
+    margin-left:12px;
   }
   .row a{
     color: rgb(218, 164, 48);
-    font-size: 12px;
+    font-size: 9px;
   }
 
   .table th a{
     color:rgb(218, 164, 48);
-    font-size: 11px;
+    font-size: 9px;
     margin-left: 100px;
   }
   .container{
@@ -212,7 +212,7 @@
                                       <div class="col-md-4">
                                           <label class="col-form-label">Party Name</label>
                                           <div class="d-flex">
-                                            <select id="partySelect" name="partyname" onclick="updateSourceOfSupply()" class="form-control border-secondary select2">
+                                            <select id="partySelect" name="partyname"  class="form-control border-secondary select2">
                                               <option >Select a Party</option>
                                               {% for p in party %}
                                                {% if p.cid_id == cmp.cid %}
@@ -235,7 +235,7 @@
                                             </button>
                                           </div>
                                           <div class="mt-1 d-flex" >
-                                              &nbsp;<span id="ava_balance" style=" color: black;"> Available Balance : <span id="ava_balance"></span></span>
+                                              &nbsp;<span id="balancediv" style=" color: black;"> Available Balance : <span id="ava_balance"></span></span>
                                           </div>
                                                                             
                                         <div>
@@ -351,42 +351,16 @@
                                                                 {% endfor %}
                                                             </select> &nbsp;&nbsp;&nbsp;
 
-                                                <script src="path/to/selectize.js"></script>            
-                                                <script>
-                                                    $(document).ready(function () {
-                                                        $('.productname').selectize({
-                                                            sortField: 'value',
-                                                            items: [''],
-                                                            render: {
-                                                                item: function (item, escape) {
-                                                                    if (item.value === '') {
-                                                                        return '';
-                                                                    }
-                                                                    return '<div>' + escape(item.text) + '</div>';
-                                                                }
-                                                            }
-                                                        });
-                                                        
-                                                    });
-                                                    $(document).ready(function() {
-                                                        // Call the productsearch function after the document is ready
-                                                        productsearch(roinc);
-                                                    });
-                                                
-                                                    function productsearch(roinc){
-                                                        $(`#productname${roinc}`).selectize({
-                                                            sortField: 'value',
-                                                            render: {
-                                                                item: function (item, escape) {
-                                                                    if (item.value === '') {
-                                                                        return '';
-                                                                    }
-                                                                    return '<div>' + escape(item.text) + '</div>';
-                                                                }
-                                                            }
-                                                        });
-                                                    }
-                                                </script>   
+                                                            <script>
+                                                                $(document).ready(function() {
+                                                                    
+                                                                    $('#product1').select2();
+                                                                
+                                                                  });
+                                                            </script>
+                
+                                                            
+                                               
                                                            
                                                           <button id="openModalBtn" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#newitem" data-bs-whatever="@mdo">
                                                               <span class="fa fa-plus"></span>
@@ -405,7 +379,7 @@
                                                           <input type="number" name='qty[]' id="qty1"  class="form-control border-secondary qty mb-1" step=0 min=0 style="color: black; background-color: white;" value=0 />
                                                       </td>
                                                   
-                                                      <td style="width:12%">
+                                                      <td style="width:16%">
                                                           <input type="number" name='price[]' id="unit1" class="form-control border-secondary price" step="0.00" min="0" style="color: black; background-color: white;" value=0 readonly />
                                                       </td>
                                                   
@@ -437,8 +411,8 @@
                                                           <input type="number" name='discount[]'  placeholder='Enter Discount' id="disc1" value=0 class="form-control border-secondary disc" step=0 min=0 style="  color: black; background-color: white;"  />
                                                       </td>
                                   
-                                                      <td style="width:13%">
-                                                          <input type="number" name='total[]' id="total1" class="form-control border-secondary total" value=0 readonly style="color: black; background-color: white;"  />
+                                                      <td style="width:20%">
+                                                          <input type="number" name='total[]' id="total1" class="form-control border-secondary total" value=0 readonly style="color: black; background-color: white;width:100px;"  />
                                                       </td>
                                                       <td hidden><input type="number" name='taxamount1' id="taxamount1" class="taxamount" /></td>
                                                       
@@ -572,7 +546,6 @@
           </div>
       </div> 
 
-
       <div class="modal fade" id="newitem">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
@@ -627,7 +600,7 @@
                                             </div>
                                         </div>
                                     </div>
-    
+
                                     <div id="pricing_template" style="background-color: rgba(144, 211, 117, 0.098);">
                                         <div class="row">
                                             <div class="col-sm-12  col-md-1"></div>
@@ -648,7 +621,7 @@
                                                             <option value="GST3[3%]">GST3[3%]</option>
                                                             <option value="GST5[5%]">GST5[5%]</option>
                                                             <option value="GST12[12%]">GST12[12%]</option>
-                                                            <option value="GST13[18%]">GST18[18%]</option>
+                                                            <option value="GST18[18%]">GST18[18%]</option>
                                                             <option value="GST28[28%]">GST28[28%]</option>
                                                             </select>
                                                         </div>
@@ -703,7 +676,7 @@
                                                 <div class="d-flex">
                                                     <div class="w-50 me-3">
                                                     <label class="tb fw-bold" for="itmdate" style="color: black;">DATE</label><br>
-                                                    <input style="color: black;background-color: white" id="itmdate" class="form-control fw-normal border-secondary  fs-3" type="date" required name="itmdate" value="{{todate}}">
+                                                    <input style="color: black;background-color: white" id="itmdate" class="form-control fw-normal border-secondary  fs-3" type="date" required name="itmdate" value="{{tod}}">
                                                     </div>
                                                     <div class="w-50">
                                                     <label class="tb fw-bold" for="minstock" style="color: black;">MINIMUM STOCK TO MAINTAIN</label><br>
@@ -725,7 +698,7 @@
             </div> 
         </div>
     </div>
-    
+            
 
 
 {% comment %} <div class="modal fade" id="newunit">
@@ -778,7 +751,30 @@
 </div> {% endcomment %}
 
  <!-- party modal-->
+ <script>
+    var checkbox1 = document.getElementById('inclusive');
+    checkbox1.addEventListener('click', function () {
+        if (checkbox1.checked) {
+            document.getElementById('taxdiv').style.display = 'block';
+            document.getElementById('check').checked = false;
+        } else {
+            document.getElementById('taxdiv').style.display = 'none';
+            document.getElementById('intra_st').value = ' ';
+            document.getElementById('inter_st').value = ' ';
+        }
+    });
 
+    var checkbox = document.getElementById('check');
+    checkbox.addEventListener('click', function () {
+        if (checkbox.checked) {
+            document.getElementById('taxdiv').style.display = 'none';
+            document.getElementById('inclusive').checked = false;
+            document.getElementById('intra_st').value = ' ';
+            document.getElementById('inter_st').value = ' ';
+        } 
+
+    });
+</script>
 
 
 
@@ -1061,7 +1057,7 @@
     $("#date1").val(currentDate);
   });
 </script>
-<script>
+{% comment %} <script>
   function selectOptionByValue(selectElement, value) {
       for (var option of selectElement.options) {
           if (option.value === value) {
@@ -1087,37 +1083,13 @@
       updateInvoiceDetails();
   }
 </script>
+ {% endcomment %}
 
 
 
 
 
-{% comment %} <script type="text/javascript">
-  $(document).ready(function () {
-    $("#partySelect").change(function () {
-        var party_name = $(this).val();
-        if (party_name) {
-            // Make an AJAX request to get both the party's phone number and balance
-            $.get('{% url "get_party_number" %}', { partyname: party_name })
-                .then(function (data) {
-                    $("#partyPhoneNumber").val(data.phone);
-                    $("#ava_balance").text(data.balance);
-                })
-                .catch(function (error) {
-                    console.log("Error fetching party details:", error);
-                });
-        }
-        
-    });
 
-
-    // Assuming you want to handle the button click as well
-    $(".add-party-btn").click(function () {
-        // Your button click logic here
-    });
-});
-
-</script>  {% endcomment %}
 
 
 
@@ -1127,13 +1099,14 @@
     $('#add').click(function(){
         var roinc = $("#items-table-body tr").length;
         roinc++
+       
         $('#items-table-body').append(
             `<tr id='addr0${roinc}'>
                 <td class = 'nnum' style="text-align: center; width:2%"">${roinc}</td>
 
                 <td style="width:21%">
                     <div class="d-flex">
-                        <select name='product[]' id="product${roinc}" class="form-control border-secondary product"  onchange="changeprd(this.id,this.value)" style="color: black; background-color: white;">
+                        <select name='product[]' id="product${roinc}" class="form-control border-secondary product select2"  onchange="changeprd(this.id,this.value)" style="color: black; background-color: white;">
                             <option value="" selected hidden>Select Product</option>
                             {% for i in item %}
                                 {% if i.cid_id == cmp.cid %}
@@ -1201,60 +1174,19 @@
                 </td>
             </tr>`
         );
-        reloadItem2(roinc)
-        ProductSearch(roinc).selectize();
-       // $(`#product${roinc}`).select2();
+        reloadItem2(roinc);
+        
+       $(`#product${roinc}`).select2();
+       handleSourceOfSupply();
         
         
         
        
     });
 });
-function changeprd(id,value){
-    var n = id.slice(7);
-    $.ajax({
-        url: "{% url 'get_hsn_for_item' %}",
-        type : 'GET',
-        data:{
-            id : value,
-            csrfmiddlewaretoken: '{{ csrf_token }}'
-        },
-        
-        success: function(response) {
-            data = response.hsn
-            data2 = response.qty
-            data3 = response.price
-            data4 = response.gst
-            data5 = response.igst
-            var bc = document.getElementById("plosu").value;
-            if (bc == 'State') {
-                document.getElementById('intrataxval'+n).value = data4;
-                document.getElementById('intertaxval'+n).value = data5;
-                document.getElementById('hsn'+n).value = data;
-                document.getElementById('unit'+n).value = data3;
-                document.getElementById('tax'+n).value = data4;
-                calc()
-            } else if (bc == 'Other State') {
-                document.getElementById('intrataxval'+n).value = data4;
-                document.getElementById('intertaxval'+n).value = data5;
-                document.getElementById('hsn'+n).value = data;
-                document.getElementById('unit'+n).value = data3;
-                document.getElementById('tax'+n).value = data5;
-                calc()
-            }else{
-                alert('Please Select Place of Supply')
-                var $select = $(document.getElementById('product'+n));
-                var selectize = $select[0].selectize;
-                selectize.setValue("");
-            }
-        },
-    });
-    updateSourceOfSupply()
-
-}
-
 $(document).on('click','.remove_row',function(){
     var row_id = $(this).attr("id");
+    console.log(row_id)
     $('#addr0'+row_id+'').remove();
     var table = document.getElementById('tab_logic');
     var rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
@@ -1263,6 +1195,7 @@ $(document).on('click','.remove_row',function(){
         cells[0].innerText = i + 1;
     }
     calc();
+  
 });
     
 $(document).on('click','.clone_row',function(){
@@ -1379,6 +1312,56 @@ $(document).on("change", "#adj", function(){
     $('#balance').val((parseFloat(subtot)+parseFloat(tax)+parseFloat(adj)-parseFloat(adv)).toFixed(2));
 });
 
+function changeprd(id,value){
+    var n = id.slice(7);
+    $.ajax({
+        url: "{% url 'get_hsn_for_item' %}",
+        type : 'GET',
+        data:{
+            id : value,
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+        },
+        
+        success: function(response) {
+            data = response.hsn
+            data2 = response.qty
+            data3 = response.price
+            data4 = response.gst
+            data5 = response.igst
+           
+            var bc = document.getElementById("plosu").value;
+            if (bc == 'State') {
+                console.log(data4)
+                console.log(n)
+                document.getElementById('intrataxval'+n).value = data4;
+                document.getElementById('intertaxval'+n).value = data5;
+                document.getElementById('hsn'+n).value = data;
+                document.getElementById('unit'+n).value = data3;
+                document.getElementById('tax1'+n).value = data4;
+                calc()
+            } else if (bc == 'Other State') {
+                console.log(data5)
+                console.log(n)
+
+                document.getElementById('intrataxval'+n).value = data4;
+                document.getElementById('intertaxval'+n).value = data5;
+                document.getElementById('hsn'+n).value = data;
+                document.getElementById('unit'+n).value = data3;
+                document.getElementById('tax2'+n).value = data5;
+                calc()
+            }else{
+                alert('Please Select Place of Supply')
+                var $select = $(document.getElementById('product'+n));
+                var selectize = $select[0].selectize;
+                selectize.setValue("");
+            }
+        },
+    });
+    //updateSourceOfSupply()
+
+}
+
+
 function checkhsn(element){
     var hsninput = element.value;
     var gstregexp = "[0-9]{6}";
@@ -1465,9 +1448,44 @@ function checkphone(element) {
                     }
                 });
             }
-            updateSourceOfSupply()
+           // updateSourceOfSupply()
+        });
+    
+    $('#inv_no').on('change', function () {
+        var selectedInvNo = $(this).val();
+        console.log(selectedInvNo)
+
+        // Make another AJAX request to get the date for the selected bill number
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'get_Invoice_date' %}",  // Replace with the actual URL to fetch date
+            data: {
+                inv_no: selectedInvNo,
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+            },
+            success: function (dateData) {
+                // Clear existing options in the 'billdate' dropdown
+                $('#inv_date').empty();
+
+                if (dateData && dateData.inv_date) {
+                    // Append the date option to the 'billdate' dropdown
+                    $('#inv_date').append($('<option>', {
+                        value: dateData.bill_date,
+                        text: dateData.bill_date
+                    }));
+                } else {
+                    // If no date is available, add a default option
+                    $('#Inv_date').append($('<option>', {
+                        value: 'No date',
+                        text: 'No date available'
+                    }));
+                }
+            }
         });
     });
+});
+
+
 </script>
 
 

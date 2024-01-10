@@ -255,12 +255,16 @@
                                     
                                     
                                             <label class="col-form-label">Invoice Date</label>
-                                            <select class="form-control border-secondary" name="inv_date" id="inv_date" style="color: black;background-color: white;width:330px;"  >
-                                                <option value="{{credit.invoice_date}}" selected hidden>{{credit.invoice_date }}</option>
-                                                <!-- Options will be dynamically added here using JavaScript -->
+                                            <select class="form-control border-secondary" name="inv_date" id="inv_date" style="color: black; background-color: white; width: 330px;">
+                                                {% if credit.invoice_date == '0000-00-00' %}
+                                                    <option value="nodate" selected hidden>nodate</option>
+                                                {% else %}
+                                                    <option value="{{ credit.invoice_date }}" selected hidden>{{ credit.invoice_date }}</option>
+                                                {% endif %}
+                                                <!-- No need to add options dynamically -->
                                             </select>
                                                 <!-- Options will be dynamically added here using JavaScript -->
-                                          
+                                             
                                         </div>
                                       </div>
                                       <div class="col-md-4">
@@ -420,11 +424,11 @@
                                                     </td>
 
                                                     <td style="width: 15%;">
-                                                        <input type="text" id="intrataxval{{ forloop.counter }}" value="{{j.product.item_gst}}" hidden>
-                                                        <input type="text" id="intertaxval{{ forloop.counter }}" value="{{j.product.item_igst}}" hidden>
-                                                        <input type="text"  id="select_tax{{ forloop.counter }}" placeholder="Tax Rate" class="form-control seltax d-none">
+                                                        <input type="text" id="intrataxval1" value="{{j.product.item_gst}}" hidden>
+                                                        <input type="text" id="intertaxval1" value="{{j.product.item_igst}}" hidden>
+                                                        <input type="text"  id="select_tax1" placeholder="Tax Rate" class="form-control seltax d-none">
                                                         {% if credit.supplyplace == 'State'  %}
-                                                            <select name='tax1[]' id="tax1{{ forloop.counter }}" class="form-control tax intra_tax d-flex border-secondary" style="color: black; background-color: white;">
+                                                            <select name='tax1[]' id="tax11" class="form-control tax intra_tax d-flex border-secondary" style="color: black; background-color: white;">
                                                                 <option selected value="{{j.tax}}" >{{j.tax}}</option>
                                                                 <option  value=" " hidden>Select Tax</option>
                                                                 <option value="GST0[0%]" >GST0[0%]</option>
@@ -434,7 +438,7 @@
                                                                 <option value="GST13[18%]">GST18[18%]</option>
                                                                 <option value="GST28[28%]">GST28[28%]</option>
                                                             </select>
-                                                            <select name='tax2[]' id="tax2{{ forloop.counter }}" class="form-control tax inter_tax d-none border-secondary" style="color: black; background-color: white;">
+                                                            <select name='tax2[]' id="tax21" class="form-control tax inter_tax d-none border-secondary" style="color: black; background-color: white;">
                                                                 <option  value=" " hidden>Select Tax</option>
                                                                 <option value="IGST0[0%]"  >IGST0[0%]</option>
                                                                 <option value="IGST3[3%]">IGST3[3%]</option>
@@ -1119,7 +1123,7 @@
     $("#date1").val(currentDate);
   });
 </script>
-<script>
+{% comment %} <script>
   function selectOptionByValue(selectElement, value) {
       for (var option of selectElement.options) {
           if (option.value === value) {
@@ -1145,7 +1149,7 @@
       updateInvoiceDetails();
   }
 </script>
-
+ {% endcomment %}
 
 
 
@@ -1266,14 +1270,14 @@ function changeprd(id,value){
                 document.getElementById('intertaxval'+n).value = data5;
                 document.getElementById('hsn'+n).value = data;
                 document.getElementById('unit'+n).value = data3;
-                document.getElementById('tax'+n).value = data4;
+                document.getElementById('tax1'+n).value = data4;
                 calc()
             } else if (bc == 'Other State') {
                 document.getElementById('intrataxval'+n).value = data4;
                 document.getElementById('intertaxval'+n).value = data5;
                 document.getElementById('hsn'+n).value = data;
                 document.getElementById('unit'+n).value = data3;
-                document.getElementById('tax'+n).value = data5;
+                document.getElementById('tax2'+n).value = data5;
                 calc()
             }else{
                 alert('Please Select Place of Supply')
@@ -1283,7 +1287,7 @@ function changeprd(id,value){
             }
         },
     });
-    updateSourceOfSupply()
+    //updateSourceOfSupply()
 
 }
 
