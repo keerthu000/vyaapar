@@ -1099,7 +1099,7 @@
     $('#add').click(function(){
         var roinc = $("#items-table-body tr").length;
         roinc++
-       
+       console.log('add',roinc)
         $('#items-table-body').append(
             `<tr id='addr0${roinc}'>
                 <td class = 'nnum' style="text-align: center; width:2%"">${roinc}</td>
@@ -1175,8 +1175,9 @@
             </tr>`
         );
         reloadItem2(roinc);
-        
-       $(`#product${roinc}`).select2();
+        initializeSelect2('#product' + roinc);
+        //$('#product' + roinc).select2();
+       //$(`#product${roinc}`).select2();
        handleSourceOfSupply();
         
         
@@ -1184,20 +1185,38 @@
        
     });
 });
-$(document).on('click','.remove_row',function(){
+$(document).on('click', '.remove_row', function () {
     var row_id = $(this).attr("id");
-    console.log(row_id)
-    $('#addr0'+row_id+'').remove();
+    console.log("remove : " + row_id);
+    $('#addr0' + row_id + '').remove();
+
+
     var table = document.getElementById('tab_logic');
     var rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
     for (var i = 0; i < rows.length; i++) {
         var cells = rows[i].getElementsByTagName('td');
         cells[0].innerText = i + 1;
+        // Update the id attribute of each row
+        var oldId = rows[i].id;
+        var newId = 'addr0' + (i + 1);
+        rows[i].id = newId;
+
+        // Update the id attribute of any element within the row that has an id
+        $(rows[i]).find('[id]').each(function () {
+            var elementId = $(this).attr('id');
+            var newElementId = elementId.replace(/\d+/, i + 1);
+            $(this).attr('id', newElementId);
+        });
     }
+
     calc();
-  
 });
-    
+function initializeSelect2(selector) {
+    // Use setTimeout to wait for DOM update
+    setTimeout(function () {
+        $(selector).select2();
+    }, 0);
+}
 $(document).on('click','.clone_row',function(){
     var roinc = $("#items-table-body tr").length;
     var originalRow = $(this).closest('#items-table-body tr'); 
