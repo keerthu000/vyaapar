@@ -442,14 +442,33 @@
                                                         <input type="number" name='price[]' value="{{ j.product.item_purchase_price }}" id="unit{{forloop.counter}}"class="form-control border-secondary price" step="0.00" min="0" style="color: black; background-color: white;" />
                                                     </td>
 
-                                                    <td >
-
+                                                    <td style="width:12%">
+                                                       
                                                         <input type="text" id="intrataxval{{forloop.counter}}" value="{{j.product.item_gst}}" hidden>
                                                         <input type="text" id="intertaxval{{forloop.counter}}" value="{{j.product.item_igst}}" hidden>
                                                         {% if  credit.supplyplace  == 'State'  %}
                                                             <input type="text" name='tax[]' id="tax{{forloop.counter}}" class="form-control border-secondary tax" style="color: black; background-color: white; width: 120px;" value="{{j.product.item_gst}}"  readonly />
-                                                        {% else %}
-                                                            <input type="text" name='tax[]' id="tax{{forloop.counter}}" class="form-control border-secondary tax" style="color: black; background-color: white; width: 120px;" value="{{j.product.item_igst}}"  readonly />
+                                                            {% comment %} <select name='tax[]' id="tax{{forloop.counter}}" class="form-control border-secondary tax intra_tax d-none" style="color: black; background-color: white;">
+                                                                <option  value="{{j.product.item_gst}}" selected> {{j.product.item_gst}}</option>
+                                                                <option value="GST0[0%]">GST0[0%]</option>
+                                                                <option value="GST3[3%]">GST3[3%]</option>
+                                                                <option value="GST5[5%]">GST5[5%]</option>
+                                                                <option value="GST12[12%]">GST12[12%]</option>
+                                                                <option value="GST13[18%]">GST18[18%]</option>
+                                                                <option value="GST28[28%]">GST28[28%]</option>
+                                                            </select> {% endcomment %}
+                                                           {% else %}
+                                                        
+                                                            <input type="text" name='tax[]' id="tax{{forloop.counter}}" class="form-control border-secondary tax" style="color: black; background-color: white; width: 120px;" value="{{j.product.item_igst}}"  readonly /> 
+                                                            {% comment %} <select name='tax[]' id="tax{{forloop.counter}}" class="form-control border-secondary tax inter_tax d-none " style="color: black; background-color: white;">
+                                                                <option  value="{{j.product.item_igst}} " selected>{{j.product.item_igst}}</option>
+                                                                <option value="IGST0[0%]" >IGST0[0%]</option>
+                                                                <option value="IGST3[3%]">IGST3[3%]</option>
+                                                                <option value="IGST5[5%]">IGST5[5%]</option>
+                                                                <option value="IGST12[12%]">IGST12[12%]</option>
+                                                                <option value="IGST18[18%]">IGST18[18%]</option>
+                                                                <option value="IGST28[28%]">IGST28[28%]</option>
+                                                            </select> {% endcomment %}
                                                         {% endif %}
                                                     </td>  
                                                     
@@ -1428,6 +1447,7 @@ function checkphone(element) {
               }
           }
       } else {
+        console.log('bc',bc)
           document.getElementById('cgstdiv').style.display = 'none';
           document.getElementById('sgstdiv').style.display = 'none';
           document.getElementById('igstdiv').style.display = 'flex';
@@ -1466,24 +1486,30 @@ function checkphone(element) {
             success: function (response) {
                 var data4 = response.gst;
                 var data5 = response.igst;
+                console.log('data4',data4)
                 var bc = document.getElementById("plosu").value;
     
                 if (bc === 'State') {
+                    console.log('data4',data4)
                     document.getElementById('intrataxval' + n).value = data4;
                     document.getElementById('intertaxval' + n).value = data5;
                     document.getElementById('hsn' + n).value = response.hsn;
                     document.getElementById('unit' + n).value = response.price;
                     document.getElementById('tax' + n).value = data4;
-                   // document.getElementById('tax' + n).value = ''; // Reset tax2 value
+                    
+                    document.getElementById('tax' + n).value = ''; // Reset tax2 value
                     calc();
+                    
                 } else if (bc === 'Other State') {
+                    console.log('data5',data5)
                     document.getElementById('intrataxval' + n).value = data4;
                     document.getElementById('intertaxval' + n).value = data5;
                     document.getElementById('hsn' + n).value = response.hsn;
                     document.getElementById('unit' + n).value = response.price;
-                    //document.getElementById('tax' + n).value = ''; // Reset tax1 value
+                    document.getElementById('tax' + n).value = ''; // Reset tax1 value
                     document.getElementById('tax' + n).value = data5;
                     calc();
+                    
                 } else {
                     alert('Please Select Place of Supply');
                     var $select = $(document.getElementById('product' + n));
