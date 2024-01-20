@@ -212,14 +212,15 @@
                                       <div class="col-md-4">
                                           <label class="col-form-label">Party Name</label>
                                           <div class="d-flex">
-                                            <select name="partyname" id="partySelect" class="form-control border-secondary select2" style="color: black; background-color: white;"  >
-                                                <option value="{{credit.party.id}}" selected hidden>{{credit.party.party_name}}</option>
+                                            <select name="partyname" id="partySelect" class="form-control border-secondary select2" style="color: black; background-color: white;">
+                                                <option value="{{credit.party.id}}" selected>{{credit.party.party_name}}</option>
                                                 {% for p in party %}
-                                                    {% if p.cid_id == cmp.cid %}
-                                                    <option value="{{p.id}}" data-state="{{ p.state }}"> {{ p.party_name }}</option>
+                                                    {% if p.cid_id == cmp.cid and p.id != credit.party.id %}
+                                                        <option value="{{p.id}}" data-state="{{ p.state }}">{{ p.party_name }}</option>
                                                     {% endif %}
                                                 {% endfor %}
-                                            </select> &nbsp;&nbsp;&nbsp;
+                                            </select>
+                                             &nbsp;&nbsp;&nbsp;
                                             <script>
                                                 $(document).ready(function() {
                                                     
@@ -409,8 +410,11 @@
                                                             <select name='product[]' id="product1" class="form-control border-secondary product"  onchange="changeprd(this.id,this.value)" style="color: black; background-color: white;">
                                               
                                                                 <option value="{{j.product.id}}" selected hidden>{{j.product.item_name}}</option>
-                                                                {% for i in product %}
-                                                                <option value="{{i.id}}">{{ i.item_name }} </option>
+                                                                {% for i in item %}
+                                                                 {% if i.id != j.product.id %}
+                                                                  <option value="{{i.id}}" >{{ i.item_name }} </option>
+                                                                  {% endif %}
+
                                                                 {% endfor %}
                                                             </select> &nbsp;&nbsp;&nbsp;
 
@@ -418,11 +422,14 @@
                                                                 $(document).ready(function() {
                                                                     
                                                                     $('#product1').select2();
+                                                                  
                                                                 
                                                                   });
                 
                 
                                                             </script>
+                                                       
+                                                            
                                                           
                                                             <button id="modal_closing" type="button" class="btn btn-outline-info " data-bs-toggle="modal" data-bs-target="#newitem" data-bs-whatever="@mdo">
                                                                 <span class="fa fa-plus"></span>
@@ -456,8 +463,7 @@
                                                         {% endif %}
                                                     </td>  
                                                     
-                                                    
-                                              
+                                                  
                                                    
                                                     <td style="width:10%">
                                                         <input type="number" name='discount[]' placeholder='Enter Discount' id="disc{{forloop.counter}}" value="{{j.discount|default:0}}" class="form-control disc border-secondary" step=0 min=0 style="color: black; background-color: white;">
@@ -778,7 +784,31 @@
         </div>
     </div>
     
-
+    <script>
+        var checkbox1 = document.getElementById('inclusive');
+        checkbox1.addEventListener('click', function () {
+            if (checkbox1.checked) {
+                document.getElementById('taxdiv').style.display = 'block';
+                document.getElementById('check').checked = false;
+            } else {
+                document.getElementById('taxdiv').style.display = 'none';
+                document.getElementById('intra_st').value = ' ';
+                document.getElementById('inter_st').value = ' ';
+            }
+        });
+    
+        var checkbox = document.getElementById('check');
+        checkbox.addEventListener('click', function () {
+            if (checkbox.checked) {
+                document.getElementById('taxdiv').style.display = 'none';
+                document.getElementById('inclusive').checked = false;
+                document.getElementById('intra_st').value = ' ';
+                document.getElementById('inter_st').value = ' ';
+            } 
+    
+        });
+    </script>
+    
 
 {% comment %} <div class="modal fade" id="newunit">
   <div class="modal-dialog modal-xl">
@@ -1152,6 +1182,7 @@
 
 <script>
     $(document).ready(function(){
+        $('[id^=product]').select2();
         $('#add').click(function(){
             var roinc = $("#items-table-body tr").length;
             roinc++
@@ -1163,9 +1194,9 @@
                         <div class="d-flex">
                             <select name='product[]' id="product${roinc}" class="form-control border-secondary product select2"  onchange="changeprd(this.id,this.value)" style="color: black; background-color: white;">
                                 <option value="" selected hidden>Select Product</option>
-                                {% for i in product %}
+                                {% for i in item %}
                                     {% if i.cid_id == cmp.cid %}
-                                        <option  value="{{ i.id  }}">{{ i.item_name  }} </option>
+                                        <option  value="{{ i.id  }}"  {% if credit.product.item_name == i.item_name %}selected{% endif %}>{{ i.item_name  }} </option>
                                     {% endif %}
                                 {% endfor %}
                             </select>&nbsp;&nbsp;&nbsp;
@@ -1224,17 +1255,20 @@
                     </td>
                 </tr>`
             );
+
             reloadItem2(roinc)
-        
             $(`#product${roinc}`).select2();
-            handleSourceOfSupply();
+           
+        
+           
+           
             calc();
         });
     });
     
        
         
-        
+    
        
    
 

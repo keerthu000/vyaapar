@@ -216,7 +216,7 @@
                                               <option >Select a Party</option>
                                               {% for p in party %}
                                                {% if p.cid_id == cmp.cid %}
-                                                 <option    value="{{p.id}}"  data-state="{{ p.state }}">{{p.party_name}}</option>
+                                                 <option    value="{{p.id}}"  data-state="{{ p.state }}"  {% if credit.party.party_name == p.party_name %}selected{% endif %} >{{p.party_name}}</option>
                                                {% endif %}
                                               {% endfor %}
                                             </select> &nbsp;&nbsp;&nbsp;
@@ -346,7 +346,7 @@
                                                                 <option value="" selected hidden>Select </option>
                                                                 {% for i in item %}
                                                                    
-                                                                        <option value="{{ i.id }}" >{{ i.item_name  }} </option>
+                                                                        <option value="{{ i.id }}" {% if credit.product.item_name == i.item_name %}selected{% endif %} >{{ i.item_name  }} </option>
                                                                  
                                                                 {% endfor %}
                                                             </select> &nbsp;&nbsp;&nbsp;
@@ -383,29 +383,29 @@
                                                           <input type="number" name='price[]' id="unit1" class="form-control border-secondary price" step="0.00" min="0" style="color: black; background-color: white;" value=0 readonly />
                                                       </td>
                                                   
-                                                      <td style="width:15%">
-                                                          <input type="text" id="intrataxval1" hidden>
-                                                          <input type="text" id="intertaxval1" hidden>
-                                                          <input type="text"  id="select_tax1" placeholder="Tax Rate" class="form-control border-secondary seltax" readonly style=" background-color: white;">
-                                                          <select name='tax1[]' id="tax11" class="form-control border-secondary tax intra_tax d-none" style="color: black; background-color: white;">
-                                                              <option  value=" " selected hidden>Select Tax</option>
-                                                              <option value="GST0[0%]">GST0[0%]</option>
-                                                              <option value="GST3[3%]">GST3[3%]</option>
-                                                              <option value="GST5[5%]">GST5[5%]</option>
-                                                              <option value="GST12[12%]">GST12[12%]</option>
-                                                              <option value="GST13[18%]">GST18[18%]</option>
-                                                              <option value="GST28[28%]">GST28[28%]</option>
-                                                          </select>
-                                                          <select name='tax2[]' id="tax21" class="form-control border-secondary tax inter_tax d-none " style="color: black; background-color: white;">
-                                                              <option  value=" " selected hidden>Select Tax</option>
-                                                              <option value="IGST0[0%]" >IGST0[0%]</option>
-                                                              <option value="IGST3[3%]">IGST3[3%]</option>
-                                                              <option value="IGST5[5%]">IGST5[5%]</option>
-                                                              <option value="IGST12[12%]">IGST12[12%]</option>
-                                                              <option value="IGST18[18%]">IGST18[18%]</option>
-                                                              <option value="IGST28[28%]">IGST28[28%]</option>
-                                                          </select>
-                                                      </td>
+                                                        <td style="width:15%">
+                                                            <input type="text" id="intrataxval1" hidden>
+                                                            <input type="text" id="intertaxval1" hidden>
+                                                            <input type="text"  id="select_tax1" placeholder="Tax Rate" class="form-control border-secondary seltax" readonly style=" background-color: white;">
+                                                            <select name='tax1[]' id="tax11" class="form-control border-secondary tax intra_tax d-none" style="color: black; background-color: white;">
+                                                                <option  value=" " selected hidden>Select Tax</option>
+                                                                <option value="GST0[0%]">GST0[0%]</option>
+                                                                <option value="GST3[3%]">GST3[3%]</option>
+                                                                <option value="GST5[5%]">GST5[5%]</option>
+                                                                <option value="GST12[12%]">GST12[12%]</option>
+                                                                <option value="GST13[18%]">GST18[18%]</option>
+                                                                <option value="GST28[28%]">GST28[28%]</option>
+                                                            </select>
+                                                            <select name='tax2[]' id="tax21" class="form-control border-secondary tax inter_tax d-none " style="color: black; background-color: white;">
+                                                                <option  value=" " selected hidden>Select Tax</option>
+                                                                <option value="IGST0[0%]" >IGST0[0%]</option>
+                                                                <option value="IGST3[3%]">IGST3[3%]</option>
+                                                                <option value="IGST5[5%]">IGST5[5%]</option>
+                                                                <option value="IGST12[12%]">IGST12[12%]</option>
+                                                                <option value="IGST18[18%]">IGST18[18%]</option>
+                                                                <option value="IGST28[28%]">IGST28[28%]</option>
+                                                            </select>
+                                                        </td>
   
                                                       <td style="width: 10%;">
                                                           <input type="number" name='discount[]'  placeholder='Enter Discount' id="disc1" value=0 class="form-control border-secondary disc" step=0 min=0 style="  color: black; background-color: white;"  />
@@ -1110,7 +1110,7 @@
                             <option value="" selected hidden>Select Product</option>
                             {% for i in item %}
                                 {% if i.cid_id == cmp.cid %}
-                                    <option  value="{{ i.id  }}">{{ i.item_name  }} </option>
+                                    <option  value="{{ i.id  }}"  {% if credit.product.item_name == i.item_name %}selected{% endif %}>{{ i.item_name  }} </option>
                                 {% endif %}
                             {% endfor %}
                         </select>&nbsp;&nbsp;&nbsp;
@@ -1178,7 +1178,7 @@
         initializeSelect2('#product' + roinc);
         //$('#product' + roinc).select2();
        //$(`#product${roinc}`).select2();
-       handleSourceOfSupply();
+     
         
         
         
