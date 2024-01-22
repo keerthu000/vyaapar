@@ -4770,10 +4770,10 @@ def add_creditnote(request):
     qty =  tuple(request.POST.getlist("qty[]"))
     rate=tuple(request.POST.getlist("price[]"))
     discount =  tuple(request.POST.getlist("discount[]"))
-    if request.POST.get('destination') =='State':
-      tax =  tuple(request.POST.getlist("tax1[]"))
-    else:
-      tax =  tuple(request.POST.getlist("tax2[]"))
+    #if request.POST.get('destination') =='State':
+    tax =  tuple(request.POST.getlist("tax[]"))
+    # else:
+    #   tax =  tuple(request.POST.getlist("tax[]"))
     total =  tuple(request.POST.getlist("total[]"))
     return_no = CreditNote.objects.filter(retrn_no=creditnote.retrn_no, company=cmp).first()
 
@@ -4783,6 +4783,7 @@ def add_creditnote(request):
       mapped=list(mapped)
       for ele in mapped:
         itm = ItemModel.objects.get(id=ele[0])
+        print('item',itm)
         CreditNoteItem.objects.create(product = itm,qty=ele[1], tax=ele[2],discount=ele[3],total=ele[4],creditnote=return_no,company=cmp)
 
     
@@ -4837,17 +4838,22 @@ def new_creditnote_item(request):
   itm.save() 
   return JsonResponse({'success': True})
   
-
+from django.http import Http404
 def get_hsn_for_item(request):
  
-  itmid = request.GET['id']
-  itm = ItemModel.objects.get(id=itmid)
-  hsn = itm.item_hsn
-  gst = itm.item_gst
-  igst = itm.item_igst
-  price = itm.item_purchase_price
-  qty = itm.item_current_stock
-  return JsonResponse({'hsn':hsn, 'gst':gst, 'igst':igst, 'price':price, 'qty':qty})
+  itmid = request.GET.get('id')
+  print(itmid)
+  try:
+      itm = ItemModel.objects.get(id=itmid)
+      hsn = itm.item_hsn
+      gst = itm.item_gst
+      igst = itm.item_igst
+      print(igst)
+      price = itm.item_purchase_price
+      qty = itm.item_current_stock
+      return JsonResponse({'hsn':hsn, 'gst':gst, 'igst':igst, 'price':price, 'qty':qty})
+  except ItemModel.DoesNotExist:
+     raise Http404("Item not found")
 
 
 
@@ -5132,10 +5138,10 @@ def update_creditnote(request,id):
     product = tuple(request.POST.getlist("product[]"))
     qty = tuple(request.POST.getlist("qty[]"))
     if request.POST.get('destination') == 'State':
-      tax =tuple( request.POST.getlist("tax1[]"))
+      tax =tuple( request.POST.getlist("tax[]"))
       print(tax)
     else:
-      tax = tuple(request.POST.getlist("tax2[]"))
+      tax = tuple(request.POST.getlist("tax[]"))
       print(tax)
     total = tuple(request.POST.getlist("total[]"))
     discount = tuple(request.POST.getlist("discount[]"))

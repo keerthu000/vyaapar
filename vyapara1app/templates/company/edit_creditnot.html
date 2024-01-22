@@ -1181,7 +1181,7 @@
 
 
 <script>
-    $(document).ready(function(){
+    {% comment %} $(document).ready(function(){
         $('[id^=product]').select2();
         $('#add').click(function(){
             var roinc = $("#items-table-body tr").length;
@@ -1265,10 +1265,85 @@
             calc();
         });
     });
-    
+     {% endcomment %}
        
+
+
+
+        $(document).ready(function(){
+            $('[id^=product]').select2();
+        $('#add').click(function(){
+            var roinc = $("#items-table-body tr").length;
+            roinc++
+            $('#items-table-body').append(
+                `<tr id='addr0${roinc}'>
+                    <td class = 'nnum' style="text-align: center; width:2%"">${roinc}</td>
+
+                    <td style="width:15%">
+                        <div class="d-flex">
+                            <select name='product[]' id="product${roinc}" class="form-control border-secondary product select2"  onchange="changeprd(this.id,this.value)" style="color: black; background-color: white;">
+                                <option value="" selected hidden>Select</option>
+                                {% for i in item %}
+                                 
+                                        <option  value="{{ i.id  }}">{{ i.item_name  }} </option>
+                                
+                                {% endfor %}
+                            </select>&nbsp;&nbsp;&nbsp;
+
+                            <button type="button" class="btn btn-sm text-white btn "  id="modal_closing" data-bs-toggle="modal" data-bs-target="#newitem" data-bs-whatever="@mdo" style="height: 30px;margin-top: 5px; background-color: lightskyblue;"><i class="fa-solid  fa fa-plus rounded"></i></button>
+                        </div>
+                    </td>
+
+                    <td tyle="width:12%">
+                        <input type="text" name='hsn[]' id="hsn${roinc}" class="form-control border-secondary" style="color: black; background-color: white;" readonly />
+                    </td>
+
+                    <td style="width:10%">
+                        <input type="number" name='qty[]' value=0 id="qty${roinc}" class="form-control border-secondary qty mb-1" step=0 min=0 style="color: black; background-color: white;" />
+                    </td>
+
+                    <td tyle="width:12%">
+                        <input type="number" name='price[]' id="unit${roinc}" value=0 class="form-control border-secondary price" step="0.00" min="0" style="color: black; background-color: white;" readonly/>
+                    </td>
+
+                    <td style='width:15.2%;'>
+                   
+                            <input type="text" id="intrataxval${roinc}" hidden>
+                            <input type="text" id="intertaxval${roinc}" hidden>
+                            <input type="text" name='tax[]' id="tax${roinc}"  class="form-control border-secondary tax" style="color: black; background-color: white;" placeholder="GST" readonly/>
+                       
+                    </td>  
+
+                    <td tyle="width:10.5%">
+                        <input type="number" name='discount[]' placeholder='Enter Discount' value=0 id="disc${roinc}" class="form-control border-secondary disc" step=0 min=0 style="color: black; background-color: white;">
+                    </td>
+
+                    <td style="width:13%">
+                        <input type="number" name='total[]' id="total${roinc}" placeholder=0 class="form-control border-secondary total" value=0 step="any" style="color: black; background-color: white;" readonly />
+                    </td>
+
+                    <td hidden><input type="number" step="any" name='taxamount1' id="taxamount${roinc}" class=" taxamount" /></td>
+                    
+                    <td style="width:1%">
+                       
+                        
+                        <button type="button" id="${roinc}" class="btn font-weight-bold btn-outline-info rounded-circle clone_row fa fa-clone px-2 my-1 py-1" title="Clone Row" ></button>
+                        
+                        <br>
+                        <button type='button' id='${roinc}' class="btn btn-transparent text-danger btn-sm btn-outline-danger rounded-circle px-2 my-1 py-.4 remove_row">X</button>
+                                    
+                    </td>
+                </tr>`
+            );      
+            reloadItem(roinc)
+            $(`#product${roinc}`).select2();
+           
         
-    
+           
+           
+            calc();
+        });
+    });
        
    
 
@@ -1878,48 +1953,44 @@ function checkphone(element) {
             });  
         }      
     });
-
     function reloadItem() {
         $.ajax({
             url: "{% url 'creditnote_item_dropdown' %}",
-            type: 'GET',
-            dataType: 'json',
-            success: function (data) {
-                var dropdown = $('#product1');
-                dropdown.empty(); // Clear existing options
+            type: "GET",
+            dataType: "json",
+            data: {},  // Add any additional data you need to send to the server
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            success: function(data) {
+                var dropdown = $('.product');
     
+                // Clear existing options
+                dropdown.find("option").remove();
+    
+                // Add default "Select" option
                 dropdown.append($('<option>').text('Select Product').attr('value', '').attr('selected', 'selected').attr('hidden', 'hidden'));
     
+                // Loop through the data and add options to the dropdown
                 for (var i = 0; i < data.id_list.length; i++) {
                     dropdown.append($('<option>').text(data.product_list[i]).attr('value', data.id_list[i]));
                 }
-            },
-            error: function (error) {
-                console.error('Error fetching updated product list:', error);
-            }
-        });
-    }
-    function reloadItem2(selectId) {
-        $.ajax({
-            url: "{% url 'creditnote_item_dropdown' %}",
-            type: 'GET',
-            dataType: 'json',
-            success: function (data) {
-                var dropdown = $(`#product${selectId}`);
-                dropdown.empty(); // Clear existing options
     
-                dropdown.append($('<option>').text('Select Product').attr('value', '').attr('selected', 'selected').attr('hidden', 'hidden'));
     
-                for (var i = 0; i < data.id_list.length; i++) {
-                    dropdown.append($('<option>').text(data.product_list[i]).attr('value', data.id_list[i]));
-                }
+                // Destroy and reinitialize Select2
+                //dropdown.select2('destroy').select2();
+    
+                // Trigger select2 to refresh the dropdown
+                //dropdown.trigger('change');
             },
-            error: function (error) {
-                console.error('Error fetching updated product list:', error);
+            error: function(xhr, status, error) {
+                console.error(xhr.responseText);
             }
         });
     }
     
+
+
 </script>
 
 
