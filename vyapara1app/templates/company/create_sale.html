@@ -1105,75 +1105,75 @@
 
 <script>
     $(document).ready(function(){
-        
-    $('#add').click(function(){
-        var roinc = $("#items-table-body tr").length;
-        roinc++
-        $('#items-table-body').append(
-            `<tr id='addr0${roinc}'>
-                <td class = 'nnum' style="text-align: center; width:2%"">${roinc}</td>
+        $('#add').click(function(){
+            var roinc = $("#items-table-body tr").length;
+            roinc++
+            $('#items-table-body').append(
+                `<tr id='addr0${roinc}'>
+                    <td class = 'nnum' style="text-align: center; width:2%"">${roinc}</td>
 
-                <td style="width:15%">
-                    <div class="d-flex">
-                        <select name='product[]' id="product${roinc}" class="form-control border-secondary product select2"  onchange="changeprd(this.id,this.value)" style="color: black; background-color: white;">
-                            <option value="" selected hidden>Select</option>
-                            {% for i in item %}
-                             
-                                    <option  value="{{ i.id  }}">{{ i.item_name  }} </option>
-                            
-                            {% endfor %}
-                        </select>&nbsp;&nbsp;&nbsp;
-
-                        <button type="button" class="btn btn-sm text-white btn "  id="modal_closing" data-bs-toggle="modal" data-bs-target="#newitem" data-bs-whatever="@mdo" style="height: 30px;margin-top: 5px; background-color: lightskyblue;"><i class="fa-solid  fa fa-plus rounded"></i></button>
-                    </div>
-                </td>
-
-                <td tyle="width:12%">
-                    <input type="text" name='hsn[]' id="hsn${roinc}" class="form-control border-secondary" style="color: black; background-color: white;" readonly />
-                </td>
-
-                <td style="width:10%">
-                    <input type="number" name='qty[]' value=0 id="qty${roinc}" class="form-control border-secondary qty mb-1" step=0 min=0 style="color: black; background-color: white;" />
-                </td>
-
-                <td tyle="width:12%">
-                    <input type="number" name='price[]' id="unit${roinc}" value=0 class="form-control border-secondary price" step="0.00" min="0" style="color: black; background-color: white;" readonly/>
-                </td>
-
-                <td style='width:15.2%;'>
-               
-                        <input type="text" id="intrataxval${roinc}" hidden>
-                        <input type="text" id="intertaxval${roinc}" hidden>
-                        <input type="text" name='tax[]' id="tax${roinc}"  class="form-control border-secondary tax" style="color: black; background-color: white;" placeholder="GST" readonly/>
-                   
-                </td>  
-
-                <td tyle="width:10.5%">
-                    <input type="number" name='discount[]' placeholder='Enter Discount' value=0 id="disc${roinc}" class="form-control border-secondary disc" step=0 min=0 style="color: black; background-color: white;">
-                </td>
-
-                <td style="width:13%">
-                    <input type="number" name='total[]' id="total${roinc}" placeholder=0 class="form-control border-secondary total" value=0 step="any" style="color: black; background-color: white;" readonly />
-                </td>
-
-                <td hidden><input type="number" step="any" name='taxamount1' id="taxamount${roinc}" class=" taxamount" /></td>
-                
-                <td style="width:1%">
-                   
-                    
-                    <button type="button" id="${roinc}" class="btn font-weight-bold btn-outline-info rounded-circle clone_row fa fa-clone px-2 my-1 py-1" title="Clone Row" ></button>
-                    
-                    <br>
-                    <button type='button' id='${roinc}' class="btn btn-transparent text-danger btn-sm btn-outline-danger rounded-circle px-2 my-1 py-.4 remove_row">X</button>
+                    <td style="width:15%">
+                        <div class="d-flex">
+                            <select name='product[]' id="product${roinc}" class="form-control border-secondary product select2"  onchange="changeprd(this.id,this.value)" style="color: black; background-color: white;">
+                                <option value="" selected hidden>Select</option>
+                                {% for i in item %}
                                 
-                </td>
-            </tr>`
-        );  
-        reloadItem(roinc);
-         
+                                        <option  value="{{ i.id  }}">{{ i.item_name  }} </option>
+                                
+                                {% endfor %}
+                            </select>&nbsp;&nbsp;&nbsp;
+
+                            <button type="button" class="btn btn-sm text-white btn "  id="modal_closing" data-bs-toggle="modal" data-bs-target="#newitem" data-bs-whatever="@mdo" style="height: 30px;margin-top: 5px; background-color: lightskyblue;"><i class="fa-solid  fa fa-plus rounded"></i></button>
+                        </div>
+                    </td>
+
+                    <td tyle="width:12%">
+                        <input type="text" name='hsn[]' id="hsn${roinc}" class="form-control border-secondary" style="color: black; background-color: white;" readonly />
+                    </td>
+
+                    <td style="width:10%">
+                        <input type="number" name='qty[]' value=0 id="qty${roinc}" class="form-control border-secondary qty mb-1" step=0 min=0 style="color: black; background-color: white;" />
+                    </td>
+
+                    <td tyle="width:12%">
+                        <input type="number" name='price[]' id="unit${roinc}" value=0 class="form-control border-secondary price" step="0.00" min="0" style="color: black; background-color: white;" readonly/>
+                    </td>
+
+                    <td style='width:15.2%;'>
+                
+                            <input type="text" id="intrataxval${roinc}" hidden>
+                            <input type="text" id="intertaxval${roinc}" hidden>
+                            <input type="text" name='tax[]' id="tax${roinc}"  class="form-control border-secondary tax" style="color: black; background-color: white;" placeholder="GST" readonly/>
+                    
+                    </td>  
+
+                    <td tyle="width:10.5%">
+                        <input type="number" name='discount[]' placeholder='Enter Discount' value=0 id="disc${roinc}" class="form-control border-secondary disc" step=0 min=0 style="color: black; background-color: white;">
+                    </td>
+
+                    <td style="width:13%">
+                        <input type="number" name='total[]' id="total${roinc}" placeholder=0 class="form-control border-secondary total" value=0 step="any" style="color: black; background-color: white;" readonly />
+                    </td>
+
+                    <td hidden><input type="number" step="any" name='taxamount1' id="taxamount${roinc}" class=" taxamount" /></td>
+                    
+                    <td style="width:1%">
+                    
+                        
+                        <button type="button" id="${roinc}" class="btn font-weight-bold btn-outline-info rounded-circle clone_row fa fa-clone px-2 my-1 py-1" title="Clone Row" ></button>
+                        
+                        <br>
+                        <button type='button' id='${roinc}' class="btn btn-transparent text-danger btn-sm btn-outline-danger rounded-circle px-2 my-1 py-.4 remove_row">X</button>
+                                    
+                    </td>
+                </tr>`
+            );
+            $(`#product${roinc}`).select2();
+            reloadItem(roinc);
+            
         //initializeSelect2('#product' + roinc);
         //$('#product' + roinc).select2();
-       $(`#product${roinc}`).select2();
+      
      
         
         
@@ -1232,11 +1232,11 @@ $(document).on('click','.clone_row',function(){
     clonedRow.find('.product').each(function() {
         $(this).val(originalRow.find('.product').val());
     });
-    clonedRow.find('.intra_tax').each(function() {
-        $(this).val(originalRow.find('.intra_tax').val());
+    clonedRow.find('.tax').each(function() {
+        $(this).val(originalRow.find('.tax').val());
     });
     clonedRow.find('.inter_tax').each(function() {
-        $(this).val(originalRow.find('.inter_tax').val());
+        $(this).val(originalRow.find('.tax').val());
     });
     originalRow.after(clonedRow);
 
@@ -1728,32 +1728,41 @@ $(document).on("change", "#plosu", function(){
                 success: function(response) {
                     document.getElementById("modalItem").reset();
                     $('#newitem').modal('hide');
+                  
                     reloadItem();
                 },
             });  
         }      
     });
 
-     {% comment %} function reloadItem() {
+    {% comment %} function reloadItem() {
         $.ajax({
             url: "{% url 'creditnote_item_dropdown' %}",
             type: 'GET',
             dataType: 'json',
             success: function (data) {
                 var dropdown = $('#product1');
-                dropdown.empty(); // Clear existing options
+                dropdown.find("option").remove(); // Clear existing options
     
                 dropdown.append($('<option>').text('Select Product').attr('value', '').attr('selected', 'selected').attr('hidden', 'hidden'));
     
+                // Loop through the data and add options to the dropdown
                 for (var i = 0; i < data.id_list.length; i++) {
-                    dropdown.append($('<option>').text(data.product_list[i]).attr('value', data.id_list[i]));
+                    var productId = data.id_list[i];
+                    var productName = data.product_list[i];
+    
+                    // Check if the product ID is not an empty string before adding to the dropdown
+                    if (productId !== '') {
+                        dropdown.append($('<option>').text(productName).attr('value', productId));
+                    }
                 }
             },
             error: function (error) {
-                console.error('Error fetching updated product list:', error);
+                console.error('Error fetching updated product list for product1:', error);
             }
         });
     }
+    
     function reloadItem2(selectId) {
         $.ajax({
             url: "{% url 'creditnote_item_dropdown' %}",
@@ -1761,34 +1770,34 @@ $(document).on("change", "#plosu", function(){
             dataType: 'json',
             success: function (data) {
                 var dropdown = $(`#product${selectId}`);
-                dropdown.empty(); // Clear existing options
+                dropdown.find("option").remove(); // Clear existing options
     
                 dropdown.append($('<option>').text('Select Product').attr('value', '').attr('selected', 'selected').attr('hidden', 'hidden'));
     
+                // Loop through the data and add options to the dropdown
                 for (var i = 0; i < data.id_list.length; i++) {
-                    dropdown.append($('<option>').text(data.product_list[i]).attr('value', data.id_list[i]));
+                    var productId = data.id_list[i];
+                    var productName = data.product_list[i];
+    
+                    // Check if the product ID is not an empty string before adding to the dropdown
+                    if (productId !== '') {
+                        dropdown.append($('<option>').text(productName).attr('value', productId));
+                    }
                 }
-    
-                // Destroy the existing select2 instance
-                dropdown.select2('destroy');
-    
-                // Reinitialize select2 for the dropdown
-                dropdown.select2({
-                    // Add any additional select2 options here
-                });
             },
             error: function (error) {
-                console.error('Error fetching updated product list:', error);
+                console.error(`Error fetching updated product list for product${selectId}:`, error);
             }
         });
-    } {% endcomment %}
-
-    function reloadItem() {
+    }
+     {% endcomment %}
+    
+     function reloadItem() {
         $.ajax({
             url: "{% url 'creditnote_item_dropdown' %}",
             type: "GET",
             dataType: "json",
-            data: {},  // Add any additional data you need to send to the server
+            data: {},
             headers: {
                 'X-CSRFToken': '{{ csrf_token }}'
             },
@@ -1796,22 +1805,21 @@ $(document).on("change", "#plosu", function(){
                 var dropdown = $('.product');
     
                 // Clear existing options
-                dropdown.find("option").remove();
+                dropdown.empty();
     
                 // Add default "Select" option
                 dropdown.append($('<option>').text('Select Product').attr('value', '').attr('selected', 'selected').attr('hidden', 'hidden'));
     
                 // Loop through the data and add options to the dropdown
                 for (var i = 0; i < data.id_list.length; i++) {
-                    dropdown.append($('<option>').text(data.product_list[i]).attr('value', data.id_list[i]));
+                    var productId = data.id_list[i];
+                    var productName = data.product_list[i];
+    
+                    // Check if the product ID is not an empty string before adding to the dropdown
+                    if (productId !== '') {
+                        dropdown.append($('<option>').text(productName).attr('value', productId));
+                    }
                 }
-    
-    
-                // Destroy and reinitialize Select2
-                //dropdown.select2('destroy').select2();
-    
-                // Trigger select2 to refresh the dropdown
-                //dropdown.trigger('change');
             },
             error: function(xhr, status, error) {
                 console.error(xhr.responseText);

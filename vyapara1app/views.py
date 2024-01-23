@@ -4781,10 +4781,18 @@ def add_creditnote(request):
     if len(product)==len(qty)==len(tax)==len(discount)==len(total):
       mapped=zip(product,qty,tax,discount,total)
       mapped=list(mapped)
+      print('mapped',mapped)
       for ele in mapped:
-        itm = ItemModel.objects.get(id=ele[0])
-        print('item',itm)
-        CreditNoteItem.objects.create(product = itm,qty=ele[1], tax=ele[2],discount=ele[3],total=ele[4],creditnote=return_no,company=cmp)
+        try:
+            item_id = int(ele[0])
+            itm = ItemModel.objects.get(id=item_id)
+        except (ValueError, ItemModel.DoesNotExist):
+            # Handle the case where 'ele[0]' is not a valid integer or the ItemModel does not exist
+            itm = None  # or another appropriate default value
+
+        if itm:
+            CreditNoteItem.objects.create(product=itm, qty=ele[1], tax=ele[2], discount=ele[3], total=ele[4], creditnote=return_no, company=cmp)
+
 
     
     CreditNote.objects.filter(company=cmp).update(tot_credit_no=F('tot_credit_no') + 1)
@@ -5245,16 +5253,25 @@ def  credititemdetails(request):
   return JsonResponse({'hsn':hsn, 'gst':gst, 'igst':igst, 'price':price, 'qty':qty})
 
 
+from django.views.decorators.cache import cache_control
+
+import json
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def creditnote_item_dropdown(request):
-  sid = request.session.get('staff_id')
-  staff = staff_details.objects.get(id=sid)
-  cmp = company.objects.get(id=staff.company.id)
-  product = ItemModel.objects.filter(company=cmp, user=cmp.user)
+    sid = request.session.get('staff_id')
+    staff = staff_details.objects.get(id=sid)
+    cmp = company.objects.get(id=staff.company.id)
+    
+    # Fetch products for the given company
+    products = ItemModel.objects.filter(company=cmp, user=cmp.user)
+    
+    # Use a list comprehension to extract IDs and names
+    id_list = [p.id for p in products]
+    product_list = [p.item_name for p in products]
+    response_data = {'id_list': id_list, 'product_list': product_list}
+    print('Server response data:', json.dumps(response_data))
 
-  id_list = [p.id for p in product]
-  product_list = [p.item_name for p in product]
-
-  return JsonResponse({'id_list': id_list, 'product_list': product_list})
+    return JsonResponse({'id_list': id_list, 'product_list': product_list})
 
 
 
